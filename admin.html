@@ -3,331 +3,69 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Administración del parcial</title>
+<title>Panel del Profesor</title>
 <meta name="robots" content="noindex">
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2.5c5.6 6.6 9.5 11.1 9.5 16A9.5 9.5 0 0 1 6.5 18.5c0-4.9 3.9-9.4 9.5-16Z' fill='%23ff9a2e'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/theme.css">
+<link rel="stylesheet" href="assets/admin.css">
 </head>
 <body>
-<header class="top">
-  <div class="in">
-    <h1>Administración del parcial <small>Diplomado en Petróleo y Gas · UCAB</small></h1>
-    <button id="b-salir" class="ghost sm hide" style="color:inherit;border-color:rgba(255,255,255,.4)">Salir</button>
-  </div>
-</header>
 
-<main class="wrap wide">
-
-  <section id="login" class="card" style="max-width:420px;margin-left:auto;margin-right:auto">
-    <h2>Acceso del profesor</h2>
+<!-- Ingreso del profesor -->
+<section id="login" class="adm-login">
+  <div class="card">
+    <span data-logo></span>
+    <h2>Panel del profesor</h2>
+    <p class="muted" style="margin-top:6px">Diplomado en Petróleo y Gas · UCAB</p>
     <form id="f-login">
-      <label for="clave">Clave de administrador</label>
-      <input id="clave" type="password" required autocomplete="current-password">
-      <div class="row" style="margin-top:16px"><button type="submit" id="b-login">Entrar</button></div>
+      <label class="field"><span>Clave de administrador</span>
+        <input class="input" id="clave" type="password" required autocomplete="current-password"></label>
+      <button type="submit" id="b-login" class="btn lg" style="width:100%;margin-top:20px">Entrar al panel</button>
       <div id="login-msg" class="msg err hide" role="alert"></div>
     </form>
-  </section>
+  </div>
+</section>
 
-  <section id="panel" class="hide">
-    <div class="tabs" role="tablist">
-      <button data-tab="res" class="on">Resultados</button>
-      <button data-tab="est">Estudiantes</button>
-      <button data-tab="ban">Banco de preguntas</button>
-      <button data-tab="aju">Ajustes</button>
+<!-- Aplicación -->
+<div id="app" class="app hide">
+  <aside class="side" id="side">
+    <div class="brand"><span data-logo></span><div>Parcial UCAB<small>Petróleo y Gas</small></div></div>
+    <div class="nav-label">General</div>
+    <nav class="nav" id="nav">
+      <a href="#resumen" data-v="resumen"><span data-ic="dashboard"></span>Panel de control</a>
+      <a href="#estudiantes" data-v="estudiantes"><span data-ic="users"></span>Estudiantes<span class="count hide" id="nav-curso"></span></a>
+      <a href="#analisis" data-v="analisis"><span data-ic="chart"></span>Análisis de resultados</a>
+      <a href="#banco" data-v="banco"><span data-ic="book"></span>Banco de preguntas</a>
+    </nav>
+    <div class="nav-label">Configuración</div>
+    <nav class="nav">
+      <a href="#ajustes" data-v="ajustes"><span data-ic="settings"></span>Ajustes</a>
+    </nav>
+    <div class="foot nav">
+      <a href="index.html" target="_blank" rel="noopener"><span data-ic="eye"></span>Ver página del estudiante</a>
+      <button class="theme-btn" id="b-tema"></button>
+      <button class="logout" id="b-salir"><span data-ic="logout"></span>Cerrar sesión</button>
     </div>
+  </aside>
 
-    <!-- Resultados -->
-    <div id="tab-res" class="card">
-      <div class="row" style="justify-content:space-between">
-        <h2 style="margin:0">Resultados y códigos</h2>
-        <div class="row">
-          <button id="b-act" class="ghost">Actualizar</button>
-          <button id="b-exp">Exportar CSV</button>
-        </div>
+  <div class="main">
+    <header class="topbar">
+      <button class="btn ghost icon menu-btn" id="b-menu" aria-label="Menú"><span data-ic="menu"></span></button>
+      <div><h1 id="v-title"></h1><div class="sub" id="v-sub"></div></div>
+      <div class="right">
+        <span class="live" id="live">En vivo</span>
+        <button class="btn secondary sm" id="b-refresh"><span data-ic="refresh"></span><span>Actualizar</span></button>
       </div>
-      <div class="stats" id="stats"></div>
-      <div class="tablewrap" style="margin-top:14px">
-        <table>
-          <thead><tr>
-            <th>Nombre</th><th>Cédula</th><th>Código</th><th>Estado</th>
-            <th class="num">Resp.</th><th class="num">Aciertos</th><th class="num">Nota /20</th><th></th>
-          </tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-      <div id="res-msg" class="msg hide"></div>
-    </div>
-
-    <!-- Estudiantes -->
-    <div id="tab-est" class="card hide">
-      <h2>Cargar estudiantes</h2>
-      <p class="muted">Una línea por estudiante: <code>cédula, nombre</code> (acepta coma, punto y coma o tabulador; puedes pegar desde Excel). Se genera un código de acceso para cada uno; si la cédula ya existe, solo se actualiza el nombre.</p>
-      <textarea id="est-txt" placeholder="V12345678, María Pérez&#10;V23456789, Juan Rodríguez"></textarea>
-      <div class="row" style="margin-top:12px">
-        <input id="est-file" type="file" accept=".csv,.txt" style="max-width:260px">
-        <button id="b-est">Cargar estudiantes</button>
-      </div>
-      <div id="est-msg" class="msg hide"></div>
-    </div>
-
-    <!-- Banco -->
-    <div id="tab-ban" class="card hide">
-      <h2>Banco de preguntas</h2>
-      <div class="stats" id="stats-ban"></div>
-      <p class="muted" style="margin-top:14px">
-        Sube un CSV con columnas:
-        <code>tema; enunciado; opcion_a; opcion_b; opcion_c; opcion_d; correcta; dificultad</code>
-        (<code>correcta</code> = A, B, C o D; <code>dificultad</code> = 1 a 5; la dificultad es también la ponderación).
-        <a href="plantilla_preguntas.csv" download>Descargar plantilla</a>.
-      </p>
-      <div class="row">
-        <input id="ban-file" type="file" accept=".csv,.txt" style="max-width:280px">
-        <label class="row" style="margin:0;font-weight:400"><input id="ban-rep" type="checkbox"> Reemplazar el banco actual (desactiva las preguntas anteriores)</label>
-      </div>
-      <div id="ban-prev" class="muted" style="margin-top:10px"></div>
-      <div class="row" style="margin-top:12px"><button id="b-ban" disabled>Cargar preguntas</button></div>
-      <div id="ban-msg" class="msg hide"></div>
-    </div>
-
-    <!-- Ajustes -->
-    <div id="tab-aju" class="card hide">
-      <h2>Ajustes</h2>
-      <div class="row">
-        <div style="flex:1;min-width:160px"><label for="a-dur">Duración (minutos)</label><input id="a-dur" type="number" min="1"></div>
-        <div style="flex:1;min-width:160px"><label for="a-n">Preguntas por estudiante</label><input id="a-n" type="number" min="5"></div>
-      </div>
-      <p class="muted" style="font-size:.88rem">Los cambios aplican a exámenes que se inicien después de guardar.</p>
-      <div class="row"><button id="b-aju">Guardar ajustes</button></div>
-      <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
-      <label for="a-clave">Nueva clave de administrador (mínimo 8 caracteres)</label>
-      <input id="a-clave" type="password" autocomplete="new-password">
-      <div class="row" style="margin-top:12px"><button id="b-clave" class="ghost">Cambiar clave</button></div>
-      <div id="aju-msg" class="msg hide"></div>
-    </div>
-  </section>
-</main>
+    </header>
+    <div class="view" id="view"></div>
+  </div>
+</div>
 
 <script src="assets/config.js"></script>
 <script src="assets/api.js"></script>
-<script>
-const $ = (id) => document.getElementById(id);
-let clave = null, filas = [], preguntasListas = [], timer = null;
-
-function msg(id, txt, ok) {
-  const el = $(id);
-  el.textContent = txt || "";
-  el.className = "msg " + (ok ? "ok" : "err") + (txt ? "" : " hide");
-}
-
-// ── CSV ────────────────────────────────────────────────────────────────
-function parseCSV(text) {
-  text = text.replace(/^﻿/, "");
-  const first = text.split(/\r?\n/)[0] || "";
-  const delim = [";", "\t", ","].map((d) => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
-  const rows = []; let row = [], cur = "", q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (q) {
-      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
-      else cur += c;
-    } else if (c === '"') q = true;
-    else if (c === delim) { row.push(cur); cur = ""; }
-    else if (c === "\n" || c === "\r") {
-      if (c === "\r" && text[i + 1] === "\n") i++;
-      row.push(cur); cur = "";
-      if (row.some((x) => x.trim() !== "")) rows.push(row);
-      row = [];
-    } else cur += c;
-  }
-  row.push(cur);
-  if (row.some((x) => x.trim() !== "")) rows.push(row);
-  return rows;
-}
-function descargarCSV(nombre, filas) {
-  const csv = "﻿" + filas.map((f) => f.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  a.download = nombre; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-}
-const leerArchivo = (f) => new Promise((ok, no) => {
-  const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsText(f, "utf-8");
-});
-
-// ── Acceso ─────────────────────────────────────────────────────────────
-async function entrar(c) {
-  const b = await rpc("parcial_admin_banco", { p_clave: c });
-  clave = c;
-  try { sessionStorage.setItem("adm", c); } catch (e) { /* ignorar */ }
-  $("login").classList.add("hide");
-  $("panel").classList.remove("hide");
-  $("b-salir").classList.remove("hide");
-  pintarBanco(b);
-  await cargarResultados();
-  clearInterval(timer);
-  timer = setInterval(() => { if (!document.hidden && !$("tab-res").classList.contains("hide")) cargarResultados(); }, 30000);
-}
-$("f-login").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  msg("login-msg", "");
-  $("b-login").disabled = true;
-  try { await entrar($("clave").value); }
-  catch (err) { msg("login-msg", err.message); }
-  finally { $("b-login").disabled = false; }
-});
-$("b-salir").addEventListener("click", () => {
-  try { sessionStorage.removeItem("adm"); } catch (e) { /* ignorar */ }
-  location.reload();
-});
-
-document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
-  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
-  ["res", "est", "ban", "aju"].forEach((t) => $("tab-" + t).classList.toggle("hide", t !== b.dataset.tab));
-  if (b.dataset.tab === "res") cargarResultados();
-  if (b.dataset.tab === "ban" || b.dataset.tab === "aju") refrescarBanco();
-}));
-
-// ── Resultados ─────────────────────────────────────────────────────────
-const ETIQ = { sin_iniciar: "Sin iniciar", en_curso: "En curso", finalizado: "Finalizado" };
-async function cargarResultados() {
-  try {
-    filas = await rpc("parcial_admin_resultados", { p_clave: clave });
-  } catch (err) { return msg("res-msg", err.message); }
-  msg("res-msg", "");
-  const c = (e) => filas.filter((f) => f.estado === e).length;
-  const notas = filas.filter((f) => f.nota != null).map((f) => Number(f.nota));
-  const prom = notas.length ? (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(2) : "—";
-  $("stats").innerHTML = [
-    ["Estudiantes", filas.length], ["Sin iniciar", c("sin_iniciar")], ["En curso", c("en_curso")],
-    ["Finalizados", c("finalizado")], ["Promedio /20", prom],
-  ].map(([k, v]) => `<div class="stat"><b>${esc(v)}</b><span>${k}</span></div>`).join("");
-  $("tbody").innerHTML = filas.map((f) => `
-    <tr>
-      <td>${esc(f.nombre)}</td><td>${esc(f.cedula)}</td><td><code class="cod">${esc(f.codigo)}</code></td>
-      <td><span class="pill ${esc(f.estado)}">${ETIQ[f.estado] || esc(f.estado)}</span></td>
-      <td class="num">${f.estado === "sin_iniciar" ? "" : `${f.respondidas}/${f.total}`}</td>
-      <td class="num">${f.estado === "sin_iniciar" ? "" : f.correctas}</td>
-      <td class="num"><b>${f.nota == null ? "" : Number(f.nota).toFixed(2)}</b></td>
-      <td class="row" style="gap:6px;flex-wrap:nowrap">
-        ${f.estado === "sin_iniciar" ? "" : `<button class="danger sm" data-re="${f.id}" data-n="${esc(f.nombre)}">Reiniciar</button>`}
-        <button class="danger sm" data-del="${f.id}" data-n="${esc(f.nombre)}">Quitar</button>
-      </td>
-    </tr>`).join("") || `<tr><td colspan="8" class="muted">Aún no hay estudiantes. Cárgalos en la pestaña “Estudiantes”.</td></tr>`;
-}
-$("tbody").addEventListener("click", async (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  try {
-    if (b.dataset.re) {
-      if (!confirm(`¿Reiniciar el examen de ${b.dataset.n}? Se anula el intento actual y podrá empezar de nuevo con otras preguntas.`)) return;
-      await rpc("parcial_admin_reiniciar", { p_clave: clave, p_estudiante_id: Number(b.dataset.re) });
-    } else if (b.dataset.del) {
-      if (!confirm(`¿Quitar a ${b.dataset.n} de la lista? Ya no podrá ingresar.`)) return;
-      await rpc("parcial_admin_eliminar_estudiante", { p_clave: clave, p_estudiante_id: Number(b.dataset.del) });
-    } else return;
-    await cargarResultados();
-  } catch (err) { msg("res-msg", err.message); }
-});
-$("b-act").addEventListener("click", cargarResultados);
-$("b-exp").addEventListener("click", () => {
-  const cab = ["Nombre", "Cédula", "Código", "Estado", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin"];
-  descargarCSV("resultados_parcial.csv", [cab, ...filas.map((f) => [
-    f.nombre, f.cedula, f.codigo, ETIQ[f.estado] || f.estado, f.respondidas ?? "", f.total ?? "", f.correctas ?? "",
-    f.puntos ?? "", f.puntos_max ?? "", f.nota == null ? "" : String(f.nota).replace(".", ","),
-    f.iniciado_en ? new Date(f.iniciado_en).toLocaleString("es-VE") : "",
-    f.finalizado_en ? new Date(f.finalizado_en).toLocaleString("es-VE") : "",
-  ])]);
-});
-
-// ── Estudiantes ────────────────────────────────────────────────────────
-$("est-file").addEventListener("change", async (e) => {
-  if (e.target.files[0]) $("est-txt").value = await leerArchivo(e.target.files[0]);
-});
-$("b-est").addEventListener("click", async () => {
-  let rows = parseCSV($("est-txt").value);
-  if (rows.length && /c[eé]dula/i.test(rows[0][0])) rows = rows.slice(1);
-  const lista = rows.filter((r) => (r[0] || "").trim() && (r[1] || "").trim())
-    .map((r) => ({ cedula: r[0].trim(), nombre: r[1].trim() }));
-  if (!lista.length) return msg("est-msg", "No encontré filas válidas (cédula, nombre).");
-  $("b-est").disabled = true;
-  try {
-    const r = await rpc("parcial_admin_cargar_estudiantes", { p_clave: clave, p_estudiantes: lista });
-    msg("est-msg", `Listo: ${r.procesados} estudiantes. Los códigos están en la pestaña Resultados (y en “Exportar CSV”).`, true);
-    $("est-txt").value = "";
-    cargarResultados();
-  } catch (err) { msg("est-msg", err.message); }
-  finally { $("b-est").disabled = false; }
-});
-
-// ── Banco ──────────────────────────────────────────────────────────────
-function pintarBanco(b) {
-  const pd = b.por_dificultad || {};
-  const n = Number(b.n_preguntas);
-  const celdas = [1, 2, 3, 4, 5].map((d) => {
-    const v = pd[d] || 0;
-    return `<div class="stat"><b style="${v < n / 5 ? "color:var(--warn)" : ""}">${v}</b><span>Nivel ${d}</span></div>`;
-  });
-  $("stats-ban").innerHTML = `<div class="stat"><b>${b.total}</b><span>Total activas</span></div>` + celdas.join("") +
-    `<div class="stat" style="grid-column:1/-1"><span>Cada estudiante recibe ${n / 5 | 0} preguntas por nivel (${n} en total).
-     Si un nivel tiene menos, se completa con otros niveles al azar. ${b.total < n ? "<b style='color:var(--warn)'>Aún no hay suficientes preguntas para llegar a " + n + ".</b>" : ""}</span></div>`;
-  $("a-dur").value = b.duracion_min; $("a-n").value = b.n_preguntas;
-}
-async function refrescarBanco() {
-  try { pintarBanco(await rpc("parcial_admin_banco", { p_clave: clave })); } catch (err) { msg("ban-msg", err.message); }
-}
-$("ban-file").addEventListener("change", async (e) => {
-  preguntasListas = []; $("b-ban").disabled = true; msg("ban-msg", "");
-  const f = e.target.files[0]; if (!f) return;
-  let rows = parseCSV(await leerArchivo(f));
-  if (rows.length && /^tema$/i.test((rows[0][0] || "").trim())) rows = rows.slice(1);
-  const errores = [];
-  rows.forEach((r, i) => {
-    const n = i + 2, t = (x) => (x ?? "").trim();
-    const ops = r.slice(2, 6).map(t); while (ops.length && !ops[ops.length - 1]) ops.pop();
-    const idx = "ABCDE".indexOf(t(r[6]).toUpperCase());
-    const dif = Number(t(r[7]));
-    if (!t(r[1])) return errores.push(`Fila ${n}: falta el enunciado`);
-    if (ops.length < 2 || ops.some((o) => !o)) return errores.push(`Fila ${n}: necesita al menos 2 opciones sin huecos`);
-    if (idx < 0 || idx >= ops.length || !t(r[6])) return errores.push(`Fila ${n}: “correcta” debe ser una letra de las opciones`);
-    if (!(dif >= 1 && dif <= 5 && Number.isInteger(dif))) return errores.push(`Fila ${n}: dificultad debe ser 1 a 5`);
-    preguntasListas.push({ tema: t(r[0]), enunciado: t(r[1]), opciones: ops, correcta: idx, dificultad: dif });
-  });
-  const por = [1, 2, 3, 4, 5].map((d) => `N${d}: ${preguntasListas.filter((p) => p.dificultad === d).length}`).join(" · ");
-  $("ban-prev").innerHTML = `${preguntasListas.length} preguntas válidas (${por})` +
-    (errores.length ? `<br><span style="color:var(--bad)">${errores.slice(0, 8).map(esc).join("<br>")}${errores.length > 8 ? `<br>…y ${errores.length - 8} más` : ""}</span>` : "");
-  $("b-ban").disabled = !preguntasListas.length || errores.length > 0;
-});
-$("b-ban").addEventListener("click", async () => {
-  if ($("ban-rep").checked && !confirm("Se desactivarán todas las preguntas actuales y se usarán solo las del archivo. ¿Continuar?")) return;
-  $("b-ban").disabled = true;
-  try {
-    const r = await rpc("parcial_admin_cargar_preguntas", { p_clave: clave, p_preguntas: preguntasListas, p_reemplazar: $("ban-rep").checked });
-    msg("ban-msg", `Cargadas ${r.insertadas} preguntas.`, true);
-    preguntasListas = []; $("ban-file").value = ""; $("ban-prev").textContent = "";
-    refrescarBanco();
-  } catch (err) { msg("ban-msg", err.message); $("b-ban").disabled = false; }
-});
-
-// ── Ajustes ────────────────────────────────────────────────────────────
-$("b-aju").addEventListener("click", async () => {
-  try {
-    await rpc("parcial_admin_config", { p_clave: clave, p_duracion_min: Number($("a-dur").value), p_n_preguntas: Number($("a-n").value) });
-    msg("aju-msg", "Ajustes guardados.", true); refrescarBanco();
-  } catch (err) { msg("aju-msg", err.message); }
-});
-$("b-clave").addEventListener("click", async () => {
-  try {
-    const nueva = $("a-clave").value;
-    await rpc("parcial_admin_cambiar_clave", { p_clave: clave, p_nueva: nueva });
-    clave = nueva; try { sessionStorage.setItem("adm", nueva); } catch (e) { /* ignorar */ }
-    $("a-clave").value = ""; msg("aju-msg", "Clave actualizada.", true);
-  } catch (err) { msg("aju-msg", err.message); }
-});
-
-// Reanudar sesión de admin en la misma pestaña
-(function () {
-  let g = null; try { g = sessionStorage.getItem("adm"); } catch (e) { /* ignorar */ }
-  if (g) entrar(g).catch(() => { try { sessionStorage.removeItem("adm"); } catch (e) { /* ignorar */ } });
-})();
-</script>
+<script src="assets/admin.js"></script>
 </body>
 </html>

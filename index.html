@@ -5,93 +5,146 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Parcial Petróleo y Gas</title>
 <meta name="robots" content="noindex">
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2.5c5.6 6.6 9.5 11.1 9.5 16A9.5 9.5 0 0 1 6.5 18.5c0-4.9 3.9-9.4 9.5-16Z' fill='%23ff9a2e'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/theme.css">
+<link rel="stylesheet" href="assets/student.css">
 </head>
 <body>
-<header class="top">
-  <div class="in">
-    <h1>Diplomado en Petróleo y Gas <small>UCAB · Evaluación parcial</small></h1>
-    <div id="timer" class="timer hide" role="timer" aria-live="off">--:--:--</div>
+
+<!-- ═════════ Ingreso ═════════ -->
+<section id="login" class="auth">
+  <aside class="hero">
+    <svg class="topo" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g fill="none" stroke="#fff" stroke-width="1.2">
+        <ellipse cx="620" cy="160" rx="90" ry="60" transform="rotate(-18 620 160)"/>
+        <ellipse cx="620" cy="160" rx="160" ry="110" transform="rotate(-14 620 160)"/>
+        <ellipse cx="620" cy="160" rx="235" ry="165" transform="rotate(-10 620 160)"/>
+        <ellipse cx="620" cy="160" rx="320" ry="225" transform="rotate(-6 620 160)"/>
+        <ellipse cx="620" cy="160" rx="410" ry="290" transform="rotate(-2 620 160)"/>
+        <ellipse cx="140" cy="690" rx="70" ry="45" transform="rotate(12 140 690)"/>
+        <ellipse cx="140" cy="690" rx="140" ry="95" transform="rotate(10 140 690)"/>
+        <ellipse cx="140" cy="690" rx="220" ry="150" transform="rotate(8 140 690)"/>
+        <ellipse cx="140" cy="690" rx="310" ry="215" transform="rotate(6 140 690)"/>
+      </g>
+    </svg>
+    <div class="brand"><span data-logo></span><div>UCAB<small>Diplomado en Petróleo y Gas</small></div></div>
+    <div>
+      <h1>Evaluación <em>parcial</em></h1>
+      <p class="lead">Un examen adaptativo: las preguntas se ajustan a tu desempeño, de lo básico a lo más exigente.</p>
+    </div>
+    <div class="feats">
+      <div class="feat"><div class="ic" data-ic="clock"></div><div><b id="f-dur">2 horas de duración</b><span>El reloj inicia al ingresar y no se detiene.</span></div></div>
+      <div class="feat"><div class="ic" data-ic="trend"></div><div><b>Dificultad progresiva</b><span>Aciertas y sube el nivel; fallas y vuelve a bajar.</span></div></div>
+      <div class="feat"><div class="ic" data-ic="target"></div><div><b>Las difíciles valen más</b><span>Cada pregunta indica su valor en puntos (1 a 5).</span></div></div>
+    </div>
+  </aside>
+
+  <div class="auth-side">
+    <button class="theme-btn" data-theme-btn aria-label="Cambiar tema"></button>
+    <div class="auth-card">
+      <h2>Ingresa al parcial</h2>
+      <p class="sub">Usa tu cédula y el código personal que te entregó el profesor.</p>
+      <form id="f-login" autocomplete="off" novalidate>
+        <label class="field"><span>Cédula de identidad</span>
+          <input class="input" id="ced" type="text" inputmode="numeric" required placeholder="V-12345678"></label>
+        <label class="field"><span>Código de acceso</span>
+          <input class="input code-input" id="cod" type="text" required maxlength="12" autocapitalize="characters" placeholder="••••••"></label>
+        <button id="b-login" class="btn lg" type="submit" style="width:100%;margin-top:22px">Comenzar parcial</button>
+        <div id="login-msg" class="msg err hide" role="alert"></div>
+      </form>
+      <div class="note"><span data-ic="info"></span><div>Cada respuesta es definitiva y no podrás volver atrás. Si pierdes la conexión, vuelve a ingresar: continuarás donde quedaste.</div></div>
+    </div>
   </div>
-</header>
+</section>
 
-<main class="wrap">
-
-  <!-- Ingreso -->
-  <section id="login" class="card">
-    <h2>Ingreso al parcial</h2>
-    <p class="muted">Usa tu cédula y el código personal que te entregó el profesor.</p>
-    <ul class="muted" style="padding-left:1.1rem;margin:10px 0 0">
-      <li>Duración: <b id="dur">2 horas</b>. <b>El tiempo comienza al ingresar</b> y no se detiene.</li>
-      <li>Verás las preguntas una por una; cada respuesta es definitiva y no se puede volver atrás.</li>
-      <li>Las preguntas difieren entre estudiantes y las de mayor dificultad valen más puntos.</li>
-      <li>Si se cierra el navegador o se va la luz, vuelve a ingresar: continúas donde quedaste.</li>
-    </ul>
-    <form id="f-login" autocomplete="off">
-      <label for="ced">Cédula</label>
-      <input id="ced" type="text" inputmode="numeric" required placeholder="Ej.: V12345678">
-      <label for="cod">Código de acceso</label>
-      <input id="cod" type="text" required maxlength="12" autocapitalize="characters" placeholder="6 caracteres">
-      <div class="row" style="margin-top:18px"><button id="b-login" type="submit">Comenzar parcial</button></div>
-      <div id="login-msg" class="msg err hide" role="alert"></div>
-    </form>
-  </section>
-
-  <!-- Pregunta -->
-  <section id="exam" class="card hide">
-    <div class="meta">
-      <b id="prog">Pregunta 1 de 50</b>
-      <span class="badge" id="peso">Valor: 1 pt</span>
+<!-- ═════════ Examen ═════════ -->
+<section id="exam" class="hide">
+  <header class="examtop">
+    <div class="in">
+      <div class="brand" style="font-size:14px"><span data-logo></span><div>Parcial<small>Petróleo y Gas · UCAB</small></div></div>
+      <div class="who"><b id="nombre"></b><span class="muted" id="prog-txt"></span></div>
+      <div id="timer" class="timer" role="timer" aria-label="Tiempo restante"><span data-ic="clock"></span><span id="timer-txt">--:--:--</span></div>
     </div>
-    <div class="bar" aria-hidden="true"><i id="bar"></i></div>
-    <div class="muted" id="tema" style="font-size:.85rem"></div>
-    <div class="q" id="enun"></div>
-    <div id="opts" role="radiogroup" aria-label="Opciones de respuesta"></div>
-    <div class="row" style="margin-top:20px; justify-content:space-between">
-      <span class="muted" style="font-size:.88rem">Tu respuesta es definitiva al confirmar.</span>
-      <button id="b-resp" disabled>Confirmar respuesta</button>
+    <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+  </header>
+
+  <main class="qwrap">
+    <div id="qbox">
+      <div class="qmeta">
+        <span class="qnum" id="qnum">Pregunta 1 de 50</span>
+        <span class="chip" id="tema"></span>
+        <span class="valor"><span class="dots" id="dots"></span><span id="peso"></span></span>
+      </div>
+      <h2 class="qtext" id="enun"></h2>
+      <div class="opts" id="opts" role="radiogroup" aria-labelledby="enun"></div>
+      <div id="exam-msg" class="msg err hide" role="alert"></div>
     </div>
-    <div id="exam-msg" class="msg err hide" role="alert"></div>
-  </section>
+  </main>
 
-  <!-- Resultado -->
-  <section id="fin" class="card hide" style="text-align:center">
-    <h2 id="fin-tit">Parcial finalizado</h2>
-    <p class="muted" id="fin-sub"></p>
-    <div class="big"><span id="nota">0</span><span class="muted" style="font-size:1.4rem"> / 20</span></div>
-    <p class="muted" id="fin-det"></p>
-    <p class="muted" style="font-size:.9rem">Ya puedes cerrar esta página.</p>
-  </section>
+  <div class="actionbar">
+    <div class="in">
+      <span class="hint">Atajos: <kbd>A</kbd>–<kbd>D</kbd> para elegir · <kbd>Enter</kbd> para confirmar</span>
+      <button id="b-resp" class="btn lg" disabled>Confirmar respuesta</button>
+    </div>
+  </div>
+</section>
 
-</main>
+<!-- ═════════ Resultado ═════════ -->
+<section id="fin" class="finwrap hide">
+  <div class="card fincard">
+    <div class="brand" style="justify-content:center"><span data-logo></span></div>
+    <h2 style="margin-top:14px;font-size:24px" id="fin-tit">Parcial finalizado</h2>
+    <p class="muted" id="fin-sub" style="margin-top:6px"></p>
+    <div class="ring">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><linearGradient id="ringg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b8cff"/><stop offset="1" stop-color="#2158f2"/></linearGradient></defs>
+        <circle class="bg" cx="100" cy="100" r="86"/>
+        <circle class="fg" id="ring-fg" cx="100" cy="100" r="86" stroke-dasharray="540.35" stroke-dashoffset="540.35"/>
+      </svg>
+      <div class="val"><b id="nota">0</b><span>de 20 puntos</span></div>
+    </div>
+    <div class="finstats">
+      <div><b id="fs-pts">0</b><span>puntos ponderados</span></div>
+      <div><b id="fs-resp">0</b><span>preguntas respondidas</span></div>
+    </div>
+    <p class="muted" style="font-size:13px;margin-top:22px">Tu resultado quedó registrado. Ya puedes cerrar esta página.</p>
+  </div>
+</section>
 
 <script src="assets/config.js"></script>
 <script src="assets/api.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const KEY = "parcial_token";
-let token = null, deadline = 0, qActual = null, tick = null, enviando = false, cerrando = false;
+let token = null, deadline = 0, qActual = null, tick = null, enviando = false, cerrando = false, avisos = {};
+
+document.querySelectorAll("[data-ic]").forEach((el) => { el.innerHTML = icon(el.dataset.ic); });
 
 function show(sec) {
   ["login", "exam", "fin"].forEach((s) => $(s).classList.toggle("hide", s !== sec));
-  $("timer").classList.toggle("hide", sec !== "exam");
 }
-function setMsg(el, txt) { el.textContent = txt || ""; el.classList.toggle("hide", !txt); }
-
+function setMsg(el, txt) {
+  el.innerHTML = txt ? icon("alert") + `<span>${esc(txt)}</span>` : "";
+  el.classList.toggle("hide", !txt);
+}
 function fmt(s) {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   return [h, m, x].map((n) => String(n).padStart(2, "0")).join(":");
 }
+
 function actualizarReloj() {
   const resta = Math.max(0, Math.round((deadline - Date.now()) / 1000));
-  const t = $("timer");
-  t.textContent = fmt(resta);
-  t.classList.toggle("warn", resta <= 600 && resta > 120);
-  t.classList.toggle("bad", resta <= 120);
+  $("timer-txt").textContent = fmt(resta);
+  $("timer").classList.toggle("warn", resta <= 600 && resta > 120);
+  $("timer").classList.toggle("bad", resta <= 120);
+  if (resta <= 600 && resta > 590 && !avisos.diez) { avisos.diez = 1; toast("Quedan 10 minutos.", "warn"); }
+  if (resta <= 120 && resta > 110 && !avisos.dos) { avisos.dos = 1; toast("Quedan 2 minutos. Al terminar el tiempo el parcial se entrega solo.", "err", 7000); }
   if (resta === 0 && !cerrando) {
     cerrando = true;
-    // el servidor es la autoridad: al llamar a estado cierra el examen si ya venció
+    // el servidor es la autoridad: al consultar el estado cierra el examen si ya venció
     rpc("parcial_estado", { p_token: token }).then(render).catch(() => { cerrando = false; });
   }
 }
@@ -104,33 +157,31 @@ function iniciarReloj(segundos) {
 
 function render(r) {
   cerrando = false;
+  if (r.nombre) store.set("parcial_nombre", r.nombre);
+  $("nombre").textContent = r.nombre || store.get("parcial_nombre") || "";
   if (r.estado === "finalizado") return mostrarFin(r);
+  show("exam");
   iniciarReloj(r.restante_seg);
   qActual = r.pregunta;
-  $("prog").textContent = `Pregunta ${r.respondidas + 1} de ${r.total}`;
+  $("qnum").textContent = `Pregunta ${r.respondidas + 1} de ${r.total}`;
+  $("prog-txt").textContent = `${r.respondidas} de ${r.total} respondidas`;
   $("bar").style.width = (r.respondidas / r.total) * 100 + "%";
-  $("peso").textContent = `Valor: ${qActual.peso} pt${qActual.peso > 1 ? "s" : ""}`;
-  $("tema").textContent = qActual.tema || "";
+  $("tema").textContent = qActual.tema || "General";
+  $("dots").innerHTML = [1, 2, 3, 4, 5].map((n) => `<i class="${n <= qActual.peso ? "on" : ""}"></i>`).join("");
+  $("peso").textContent = `${qActual.peso} ${qActual.peso === 1 ? "punto" : "puntos"}`;
   $("enun").textContent = qActual.enunciado;
   const cont = $("opts");
-  cont.innerHTML = "";
-  qActual.opciones.forEach((txt, i) => {
-    const lab = document.createElement("label");
-    lab.className = "opt";
-    lab.style.margin = "10px 0 0";
-    lab.innerHTML = `<input type="radio" name="op" value="${i}"><span class="l">${"ABCDE"[i]}.</span><span></span>`;
-    lab.lastChild.textContent = txt;
-    cont.appendChild(lab);
-  });
-  cont.querySelectorAll("input").forEach((inp) =>
-    inp.addEventListener("change", () => {
-      cont.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o.contains(inp) && inp.checked));
-      $("b-resp").disabled = false;
-    }));
+  cont.innerHTML = qActual.opciones.map((txt, i) => `
+    <label class="opt"><input type="radio" name="op" value="${i}"><span class="k">${"ABCDE"[i]}</span><span>${esc(txt)}</span></label>`).join("");
+  cont.querySelectorAll("input").forEach((inp) => inp.addEventListener("change", seleccion));
   $("b-resp").disabled = true;
   setMsg($("exam-msg"), "");
-  show("exam");
+  const box = $("qbox"); box.classList.remove("fade-in"); void box.offsetWidth; box.classList.add("fade-in");
   window.scrollTo(0, 0);
+}
+function seleccion() {
+  document.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o.querySelector("input").checked));
+  $("b-resp").disabled = false;
 }
 
 function mostrarFin(r) {
@@ -140,19 +191,31 @@ function mostrarFin(r) {
   const motivos = {
     completado: "Respondiste todas las preguntas.",
     entregado: "Entregaste el parcial.",
+    entregado_por_profesor: "El profesor cerró tu parcial.",
     tiempo_agotado: "Se agotó el tiempo; las preguntas sin responder cuentan como 0.",
   };
-  $("nota").textContent = Number(res.nota ?? 0).toFixed(2);
+  const nota = Number(res.nota ?? 0);
   $("fin-sub").textContent = motivos[res.motivo] || "";
-  $("fin-det").textContent = `Puntos ponderados: ${res.puntos ?? 0} de ${res.puntos_max ?? 0} · Preguntas respondidas: ${r.respondidas} de ${r.total}`;
+  $("fs-pts").textContent = `${res.puntos ?? 0} / ${res.puntos_max ?? 0}`;
+  $("fs-resp").textContent = `${r.respondidas} / ${r.total}`;
   show("fin");
+  // animación del anillo y del número
+  const C = 540.35;
+  requestAnimationFrame(() => { $("ring-fg").style.strokeDashoffset = C * (1 - Math.min(nota, 20) / 20); });
+  const t0 = performance.now();
+  (function anim(t) {
+    const p = Math.min(1, (t - t0) / 1100), e = 1 - Math.pow(1 - p, 3);
+    $("nota").textContent = (nota * e).toFixed(2).replace(".", ",");
+    if (p < 1) requestAnimationFrame(anim);
+  })(t0);
 }
 
 $("f-login").addEventListener("submit", async (e) => {
   e.preventDefault();
   setMsg($("login-msg"), "");
-  $("b-login").disabled = true;
-  $("b-login").textContent = "Verificando…";
+  if (!$("ced").value.trim() || !$("cod").value.trim()) return setMsg($("login-msg"), "Escribe tu cédula y tu código.");
+  const b = $("b-login");
+  b.disabled = true; b.innerHTML = `<span class="spinner"></span> Verificando…`;
   try {
     const r = await rpc("parcial_iniciar", { p_cedula: $("ced").value, p_codigo: $("cod").value });
     if (r.error) throw new Error(r.error);
@@ -162,30 +225,36 @@ $("f-login").addEventListener("submit", async (e) => {
   } catch (err) {
     setMsg($("login-msg"), err.message);
   } finally {
-    $("b-login").disabled = false;
-    $("b-login").textContent = "Comenzar parcial";
+    b.disabled = false; b.textContent = "Comenzar parcial";
   }
 });
 
-$("b-resp").addEventListener("click", async () => {
+async function responder() {
   if (enviando) return;
   const sel = document.querySelector('input[name="op"]:checked');
   if (!sel) return;
   enviando = true;
-  $("b-resp").disabled = true;
-  $("b-resp").textContent = "Enviando…";
+  const b = $("b-resp");
+  b.disabled = true; b.innerHTML = `<span class="spinner"></span> Enviando…`;
   try {
-    const r = await rpc("parcial_responder", {
-      p_token: token, p_pregunta_id: qActual.id, p_opcion: Number(sel.value),
-    });
-    render(r);
+    render(await rpc("parcial_responder", { p_token: token, p_pregunta_id: qActual.id, p_opcion: Number(sel.value) }));
   } catch (err) {
     setMsg($("exam-msg"), err.message);
-    $("b-resp").disabled = false;
+    b.disabled = false;
   } finally {
     enviando = false;
-    $("b-resp").textContent = "Confirmar respuesta";
+    b.textContent = "Confirmar respuesta";
   }
+}
+$("b-resp").addEventListener("click", responder);
+
+// Atajos de teclado durante el examen
+document.addEventListener("keydown", (e) => {
+  if ($("exam").classList.contains("hide") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const i = "ABCDE".indexOf(e.key.toUpperCase());
+  const inputs = document.querySelectorAll('input[name="op"]');
+  if (i >= 0 && inputs[i]) { inputs[i].checked = true; inputs[i].focus(); seleccion(); e.preventDefault(); }
+  else if (e.key === "Enter" && !$("b-resp").disabled) { e.preventDefault(); responder(); }
 });
 
 window.addEventListener("beforeunload", (e) => {
