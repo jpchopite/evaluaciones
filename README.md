@@ -24,7 +24,13 @@ La lógica vive en Postgres (`supabase/migrations/001_parcial.sql`, función `pa
 
 **Estudiantes:** abren `index.html`, ingresan con cédula y código personal.
 
-**Profesor:** abre `admin.html` con la clave de administrador.
+**Profesor:** abre `admin.html` con la clave de administrador. El panel tiene cinco secciones:
+
+- **Panel de control:** indicadores en vivo (inscritos, en curso, finalizados, promedio, aprobados, duración), quién está respondiendo con su tiempo restante, distribución de notas, aciertos por nivel y por tema, y preguntas que conviene revisar.
+- **Estudiantes:** búsqueda, filtros y orden; códigos con un clic para copiar; acciones por estudiante (agregar tiempo, cerrar y calificar, nuevo código, reiniciar intento, quitar). Al hacer clic en un estudiante se abre su detalle: recorrido adaptativo (gráfico de nivel pregunta a pregunta), aciertos por nivel y cada respuesta con la opción elegida y la correcta.
+- **Análisis de resultados:** por pregunta, % de acierto, tiempo mediano, índice de discriminación, distractor más elegido y alertas automáticas (p. ej. «un distractor supera a la correcta», señal de clave equivocada). Exporta el análisis o todas las respuestas a CSV.
+- **Banco de preguntas:** cobertura por nivel, carga de CSV arrastrando el archivo, activar o desactivar preguntas.
+- **Ajustes:** duración, preguntas por estudiante, enlace para estudiantes y cambio de clave.
 
 1. *Ajustes* → cambia la clave de administrador.
 2. *Banco de preguntas* → sube el CSV (ver `plantilla_preguntas.csv`: `tema; enunciado; opcion_a…d; correcta; dificultad`). Conviene tener **al menos 10 por nivel** (≥ 50 en total) para que cada estudiante reciba 10 por nivel.
