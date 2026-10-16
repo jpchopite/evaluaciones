@@ -16,7 +16,7 @@ Cada estudiante tiene un *nivel* (1–5) que empieza en **1**.
 2. Si **acierta**, el nivel sube 1; si **falla**, baja 1 (siempre dentro de 1–5).
 3. Se repite hasta responder las 50 preguntas o agotarse el tiempo.
 
-El resultado: quien acierta va escalando de fáciles a difíciles; un error lo devuelve a preguntas más sencillas, y vuelve a subir si acierta. Como el pool ya está fijado y balanceado, **todas las preguntas del pool se responden**; el algoritmo decide el *orden*. Nunca se le dice al estudiante si acertó ni su nivel.
+El resultado: quien acierta va escalando de fáciles a difíciles; un error lo devuelve a preguntas más sencillas, y vuelve a subir si acierta. Como el pool ya está fijado y balanceado, **todas las preguntas del pool se responden**; el algoritmo decide el *orden*. Nunca se le dice al estudiante si acertó, ni su nivel, ni su nota: al terminar solo ve la confirmación de entrega; los resultados son solo para el profesor.
 
 La lógica vive en Postgres (`supabase/migrations/001_parcial.sql`, función `parcial._estado`). El navegador nunca recibe la respuesta correcta.
 

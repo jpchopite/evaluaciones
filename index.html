@@ -96,21 +96,15 @@
 <section id="fin" class="finwrap hide">
   <div class="card fincard">
     <div class="brand" style="justify-content:center"><span data-logo></span></div>
-    <h2 style="margin-top:14px;font-size:24px" id="fin-tit">Parcial finalizado</h2>
+    <div class="done-ic" data-ic="check"></div>
+    <h2 style="font-size:24px" id="fin-tit">Parcial entregado</h2>
     <p class="muted" id="fin-sub" style="margin-top:6px"></p>
-    <div class="ring">
-      <svg viewBox="0 0 200 200" aria-hidden="true">
-        <defs><linearGradient id="ringg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b8cff"/><stop offset="1" stop-color="#2158f2"/></linearGradient></defs>
-        <circle class="bg" cx="100" cy="100" r="86"/>
-        <circle class="fg" id="ring-fg" cx="100" cy="100" r="86" stroke-dasharray="540.35" stroke-dashoffset="540.35"/>
-      </svg>
-      <div class="val"><b id="nota">0</b><span>de 20 puntos</span></div>
-    </div>
     <div class="finstats">
-      <div><b id="fs-pts">0</b><span>puntos ponderados</span></div>
       <div><b id="fs-resp">0</b><span>preguntas respondidas</span></div>
+      <div><b id="fs-hora">—</b><span>hora de entrega</span></div>
     </div>
-    <p class="muted" style="font-size:13px;margin-top:22px">Tu resultado quedó registrado. Ya puedes cerrar esta página.</p>
+    <div class="note-fin">Tus respuestas quedaron registradas. La calificación la publicará el profesor.</div>
+    <p class="muted" style="font-size:13px;margin-top:18px">Ya puedes cerrar esta página.</p>
   </div>
 </section>
 
@@ -194,20 +188,12 @@ function mostrarFin(r) {
     entregado_por_profesor: "El profesor cerró tu parcial.",
     tiempo_agotado: "Se agotó el tiempo; las preguntas sin responder cuentan como 0.",
   };
-  const nota = Number(res.nota ?? 0);
+  // La nota no se muestra al estudiante: el servidor ni siquiera la envía.
   $("fin-sub").textContent = motivos[res.motivo] || "";
-  $("fs-pts").textContent = `${res.puntos ?? 0} / ${res.puntos_max ?? 0}`;
   $("fs-resp").textContent = `${r.respondidas} / ${r.total}`;
+  $("fs-hora").textContent = res.finalizado_en
+    ? new Date(res.finalizado_en).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" }) : "—";
   show("fin");
-  // animación del anillo y del número
-  const C = 540.35;
-  requestAnimationFrame(() => { $("ring-fg").style.strokeDashoffset = C * (1 - Math.min(nota, 20) / 20); });
-  const t0 = performance.now();
-  (function anim(t) {
-    const p = Math.min(1, (t - t0) / 1100), e = 1 - Math.pow(1 - p, 3);
-    $("nota").textContent = (nota * e).toFixed(2).replace(".", ",");
-    if (p < 1) requestAnimationFrame(anim);
-  })(t0);
 }
 
 $("f-login").addEventListener("submit", async (e) => {
