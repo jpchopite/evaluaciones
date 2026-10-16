@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parcial Petróleo y Gas</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="in">
+    <h1>Diplomado en Petróleo y Gas <small>UCAB · Evaluación parcial</small></h1>
+    <div id="timer" class="timer hide" role="timer" aria-live="off">--:--:--</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- Ingreso -->
+  <section id="login" class="card">
+    <h2>Ingreso al parcial</h2>
+    <p class="muted">Usa tu cédula y el código personal que te entregó el profesor.</p>
+    <ul class="muted" style="padding-left:1.1rem;margin:10px 0 0">
+      <li>Duración: <b id="dur">2 horas</b>. <b>El tiempo comienza al ingresar</b> y no se detiene.</li>
+      <li>Verás las preguntas una por una; cada respuesta es definitiva y no se puede volver atrás.</li>
+      <li>Las preguntas difieren entre estudiantes y las de mayor dificultad valen más puntos.</li>
+      <li>Si se cierra el navegador o se va la luz, vuelve a ingresar: continúas donde quedaste.</li>
+    </ul>
+    <form id="f-login" autocomplete="off">
+      <label for="ced">Cédula</label>
+      <input id="ced" type="text" inputmode="numeric" required placeholder="Ej.: V12345678">
+      <label for="cod">Código de acceso</label>
+      <input id="cod" type="text" required maxlength="12" autocapitalize="characters" placeholder="6 caracteres">
+      <div class="row" style="margin-top:18px"><button id="b-login" type="submit">Comenzar parcial</button></div>
+      <div id="login-msg" class="msg err hide" role="alert"></div>
+    </form>
+  </section>
+
+  <!-- Pregunta -->
+  <section id="exam" class="card hide">
+    <div class="meta">
+      <b id="prog">Pregunta 1 de 50</b>
+      <span class="badge" id="peso">Valor: 1 pt</span>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+    <div class="muted" id="tema" style="font-size:.85rem"></div>
+    <div class="q" id="enun"></div>
+    <div id="opts" role="radiogroup" aria-label="Opciones de respuesta"></div>
+    <div class="row" style="margin-top:20px; justify-content:space-between">
+      <span class="muted" style="font-size:.88rem">Tu respuesta es definitiva al confirmar.</span>
+      <button id="b-resp" disabled>Confirmar respuesta</button>
+    </div>
+    <div id="exam-msg" class="msg err hide" role="alert"></div>
+  </section>
+
+  <!-- Resultado -->
+  <section id="fin" class="card hide" style="text-align:center">
+    <h2 id="fin-tit">Parcial finalizado</h2>
+    <p class="muted" id="fin-sub"></p>
+    <div class="big"><span id="nota">0</span><span class="muted" style="font-size:1.4rem"> / 20</span></div>
+    <p class="muted" id="fin-det"></p>
+    <p class="muted" style="font-size:.9rem">Ya puedes cerrar esta página.</p>
+  </section>
+
+</main>
+
+<script src="assets/config.js"></script>
+<script src="assets/api.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const KEY = "parcial_token";
+let token = null, deadline = 0, qActual = null, tick = null, enviando = false, cerrando = false;
+
+function show(sec) {
+  ["login", "exam", "fin"].forEach((s) => $(s).classList.toggle("hide", s !== sec));
+  $("timer").classList.toggle("hide", sec !== "exam");
+}
+function setMsg(el, txt) { el.textContent = txt || ""; el.classList.toggle("hide", !txt); }
+
+function fmt(s) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  return [h, m, x].map((n) => String(n).padStart(2, "0")).join(":");
+}
+function actualizarReloj() {
+  const resta = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+  const t = $("timer");
+  t.textContent = fmt(resta);
+  t.classList.toggle("warn", resta <= 600 && resta > 120);
+  t.classList.toggle("bad", resta <= 120);
+  if (resta === 0 && !cerrando) {
+    cerrando = true;
+    // el servidor es la autoridad: al llamar a estado cierra el examen si ya venció
+    rpc("parcial_estado", { p_token: token }).then(render).catch(() => { cerrando = false; });
+  }
+}
+function iniciarReloj(segundos) {
+  deadline = Date.now() + segundos * 1000;
+  clearInterval(tick);
+  actualizarReloj();
+  tick = setInterval(actualizarReloj, 1000);
+}
+
+function render(r) {
+  cerrando = false;
+  if (r.estado === "finalizado") return mostrarFin(r);
+  iniciarReloj(r.restante_seg);
+  qActual = r.pregunta;
+  $("prog").textContent = `Pregunta ${r.respondidas + 1} de ${r.total}`;
+  $("bar").style.width = (r.respondidas / r.total) * 100 + "%";
+  $("peso").textContent = `Valor: ${qActual.peso} pt${qActual.peso > 1 ? "s" : ""}`;
+  $("tema").textContent = qActual.tema || "";
+  $("enun").textContent = qActual.enunciado;
+  const cont = $("opts");
+  cont.innerHTML = "";
+  qActual.opciones.forEach((txt, i) => {
+    const lab = document.createElement("label");
+    lab.className = "opt";
+    lab.style.margin = "10px 0 0";
+    lab.innerHTML = `<input type="radio" name="op" value="${i}"><span class="l">${"ABCDE"[i]}.</span><span></span>`;
+    lab.lastChild.textContent = txt;
+    cont.appendChild(lab);
+  });
+  cont.querySelectorAll("input").forEach((inp) =>
+    inp.addEventListener("change", () => {
+      cont.querySelectorAll(".opt").forEach((o) => o.classList.toggle("sel", o.contains(inp) && inp.checked));
+      $("b-resp").disabled = false;
+    }));
+  $("b-resp").disabled = true;
+  setMsg($("exam-msg"), "");
+  show("exam");
+  window.scrollTo(0, 0);
+}
+
+function mostrarFin(r) {
+  clearInterval(tick);
+  store.del(KEY); // equipo compartido: no dejar la sesión guardada
+  const res = r.resultado || {};
+  const motivos = {
+    completado: "Respondiste todas las preguntas.",
+    entregado: "Entregaste el parcial.",
+    tiempo_agotado: "Se agotó el tiempo; las preguntas sin responder cuentan como 0.",
+  };
+  $("nota").textContent = Number(res.nota ?? 0).toFixed(2);
+  $("fin-sub").textContent = motivos[res.motivo] || "";
+  $("fin-det").textContent = `Puntos ponderados: ${res.puntos ?? 0} de ${res.puntos_max ?? 0} · Preguntas respondidas: ${r.respondidas} de ${r.total}`;
+  show("fin");
+}
+
+$("f-login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  setMsg($("login-msg"), "");
+  $("b-login").disabled = true;
+  $("b-login").textContent = "Verificando…";
+  try {
+    const r = await rpc("parcial_iniciar", { p_cedula: $("ced").value, p_codigo: $("cod").value });
+    if (r.error) throw new Error(r.error);
+    token = r.token;
+    store.set(KEY, token);
+    render(r);
+  } catch (err) {
+    setMsg($("login-msg"), err.message);
+  } finally {
+    $("b-login").disabled = false;
+    $("b-login").textContent = "Comenzar parcial";
+  }
+});
+
+$("b-resp").addEventListener("click", async () => {
+  if (enviando) return;
+  const sel = document.querySelector('input[name="op"]:checked');
+  if (!sel) return;
+  enviando = true;
+  $("b-resp").disabled = true;
+  $("b-resp").textContent = "Enviando…";
+  try {
+    const r = await rpc("parcial_responder", {
+      p_token: token, p_pregunta_id: qActual.id, p_opcion: Number(sel.value),
+    });
+    render(r);
+  } catch (err) {
+    setMsg($("exam-msg"), err.message);
+    $("b-resp").disabled = false;
+  } finally {
+    enviando = false;
+    $("b-resp").textContent = "Confirmar respuesta";
+  }
+});
+
+window.addEventListener("beforeunload", (e) => {
+  if (!$("exam").classList.contains("hide")) { e.preventDefault(); e.returnValue = ""; }
+});
+
+// Retomar sesión tras recargar la página
+(async function () {
+  const guardado = store.get(KEY);
+  if (!guardado) return;
+  try {
+    token = guardado;
+    render(await rpc("parcial_estado", { p_token: token }));
+  } catch (e) {
+    store.del(KEY); token = null; show("login");
+  }
+})();
+</script>
+</body>
+</html>
