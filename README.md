@@ -33,7 +33,7 @@ La lógica vive en Postgres (`supabase/migrations/001_parcial.sql`, función `pa
 - **Ajustes:** duración, preguntas por estudiante, enlace para estudiantes y cambio de clave.
 
 1. *Ajustes* → cambia la clave de administrador.
-2. *Banco de preguntas* → sube el CSV (ver `plantilla_preguntas.csv`: `tema; enunciado; opcion_a…d; correcta; dificultad`). Conviene tener **al menos 10 por nivel** (≥ 50 en total) para que cada estudiante reciba 10 por nivel.
+2. *Banco de preguntas* → llena `plantilla_preguntas.xlsx` (tiene listas desplegables y un contador por nivel), guárdala como CSV y súbela; o sube el CSV (ver `plantilla_preguntas.csv`: `tema; enunciado; opcion_a…d; correcta; dificultad`). Conviene tener **al menos 10 por nivel** (≥ 50 en total) para que cada estudiante reciba 10 por nivel.
 3. *Estudiantes* → pega `cédula, nombre` (puedes copiar desde Excel). Se genera un código por estudiante.
 4. *Resultados* → ahí están los códigos para entregar, el avance en vivo y la exportación a CSV. «Reiniciar» anula el intento de un estudiante (queda registrado) para que pueda empezar de nuevo.
 
