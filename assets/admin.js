@@ -84,7 +84,13 @@ function descargarCSV(nombre, filas) {
   a.download = nombre; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
-const leerArchivo = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsText(f, "utf-8"); });
+// Excel en español guarda «CSV (delimitado por comas)» en Windows-1252, no en UTF-8:
+// si el archivo no es UTF-8 válido se relee con esa codificación para no dañar los acentos.
+async function leerArchivo(f) {
+  const buf = await f.arrayBuffer();
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); }
+  catch (e) { return new TextDecoder("windows-1252").decode(buf); }
+}
 const fechaCSV = (iso) => (iso ? new Date(iso).toLocaleString("es-VE") : "");
 
 // ── Modales ───────────────────────────────────────────────────────────────
@@ -612,7 +618,7 @@ PINTAR.analisis = () => {
 CONSTRUIR.banco = () => `
   <div class="levels" id="b-lv"></div>
   <div class="grid-3-2">
-    <div class="card panel"><div class="panel-h"><h3>Cargar preguntas</h3><div class="right"><a class="btn ghost sm" href="plantilla_preguntas.csv" download><span data-ic="download"></span>Plantilla CSV</a></div></div>
+    <div class="card panel"><div class="panel-h"><h3>Cargar preguntas</h3><div class="right"><a class="btn ghost sm" href="plantilla_preguntas.xlsx" download><span data-ic="download"></span>Plantilla Excel</a><a class="btn ghost sm" href="plantilla_preguntas.csv" download><span data-ic="download"></span>Plantilla CSV</a></div></div>
       <div class="panel-b">
         <label class="drop" id="b-drop"><div class="ic">${icon("upload")}</div><b>Arrastra tu archivo CSV aquí</b><span>o haz clic para elegirlo</span>
           <input type="file" id="b-file" accept=".csv,.txt" hidden></label>
