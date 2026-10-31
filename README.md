@@ -3,22 +3,26 @@
 Plataforma web para aplicar el parcial: sitio estático (GitHub Pages) + base de datos y lógica en Supabase.
 
 - **Banco de preguntas** con dificultad 1–5; la dificultad es también la ponderación (una pregunta de nivel 5 vale 5 puntos).
-- **50 preguntas al azar por estudiante** (configurable), estratificadas: 10 de cada nivel, así todos tienen el mismo puntaje máximo y el parcial es comparable. Además las opciones de cada pregunta se barajan por estudiante, para que copiar «la B» no sirva.
+- **50 preguntas por estudiante** (configurable), sacadas una a una al azar de **todo el banco** según su nivel. Además las opciones de cada pregunta se barajan por estudiante, para que copiar «la B» no sirva.
 - **Duración de 2 horas** (configurable) controlada por el servidor: el reloj del navegador es solo informativo. Al vencer, el examen se cierra y lo no respondido cuenta 0.
 - **Algoritmo adaptivo:** ver abajo.
-- **Nota sobre 20** = puntos obtenidos / puntos máximos × 20.
+- **Nota sobre 20** para todos, con la misma escala: puntos obtenidos / puntaje de un recorrido perfecto × 20.
 
 ## Algoritmo adaptivo
 
 Cada estudiante tiene un *nivel* (1–5) que empieza en **1**.
 
-1. Se presenta la pregunta aún no vista cuya dificultad sea **la más cercana al nivel actual** (empates al azar).
-2. Si **acierta**, el nivel sube 1; si **falla**, baja 1 (siempre dentro de 1–5).
+1. Se saca **al azar, de todo el banco activo**, una pregunta del nivel actual que el estudiante aún no haya visto.
+2. Si **acierta**, el nivel sube 1 (N1 → N2 → … → N5; en N5 se queda mientras acierte). Si **falla**, baja 1 (nunca por debajo de N1).
 3. Se repite hasta responder las 50 preguntas o agotarse el tiempo.
 
-El resultado: quien acierta va escalando de fáciles a difíciles; un error lo devuelve a preguntas más sencillas, y vuelve a subir si acierta. Como el pool ya está fijado y balanceado, **todas las preguntas del pool se responden**; el algoritmo decide el *orden*. Nunca se le dice al estudiante si acertó, ni su nivel, ni su nota: al terminar solo ve la confirmación de entrega; los resultados son solo para el profesor.
+**Puntos y nota.** Cada acierto vale su nivel (N1 = 1 … N5 = 5). El puntaje máximo es el de un recorrido perfecto: 1+2+3+4+5+5+… (con 50 preguntas, **240**). Es el mismo para todos, así que la nota es comparable: quien acierta todo saca 20, y fallar no reduce el máximo (solo hace perder los puntos de esa pregunta y baja el nivel de la siguiente).
 
-La lógica vive en Postgres (`supabase/migrations/001_parcial.sql`, función `parcial._estado`). El navegador nunca recibe la respuesta correcta.
+Si un nivel se queda sin preguntas no vistas, se usa la del nivel más cercano y se acredita el nivel del estudiante, para que no pierda puntos por un banco corto. Conviene tener **al menos 25 preguntas por nivel** (con 50 preguntas por examen).
+
+Nunca se le dice al estudiante si acertó, ni su nivel, ni su nota: al terminar solo ve la confirmación de entrega; los resultados son solo para el profesor.
+
+La lógica vive en Postgres (`supabase/migrations/005_banco_adaptativo.sql`, funciones `parcial._estado` y `parcial._siguiente`). El navegador nunca recibe la respuesta correcta.
 
 ## Uso
 
@@ -33,7 +37,7 @@ La lógica vive en Postgres (`supabase/migrations/001_parcial.sql`, función `pa
 - **Ajustes:** duración, preguntas por estudiante, enlace para estudiantes y cambio de clave.
 
 1. *Ajustes* → cambia la clave de administrador.
-2. *Banco de preguntas* → llena `plantilla_preguntas.xlsx` (tiene listas desplegables y un contador por nivel), guárdala como CSV y súbela; o sube el CSV (ver `plantilla_preguntas.csv`: `tema; enunciado; opcion_a…d; correcta; dificultad`). Conviene tener **al menos 10 por nivel** (≥ 50 en total) para que cada estudiante reciba 10 por nivel.
+2. *Banco de preguntas* → llena `plantilla_preguntas.xlsx` (tiene listas desplegables y un contador por nivel), guárdala como CSV y súbela; o sube el CSV (ver `plantilla_preguntas.csv`: `tema; enunciado; opcion_a…d; correcta; dificultad`). Conviene tener **al menos 25 por nivel**.
 3. *Estudiantes* → pega `cédula, nombre` (puedes copiar desde Excel). Se genera un código por estudiante.
 4. *Resultados* → ahí están los códigos para entregar, el avance en vivo y la exportación a CSV. «Reiniciar» anula el intento de un estudiante (queda registrado) para que pueda empezar de nuevo.
 
