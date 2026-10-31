@@ -487,7 +487,8 @@ function pintarDetalle(dr, d) {
   const f = S.filas.find((x) => x.id === s.id) || { ...s, estado: e ? e.estado : "sin_iniciar" };
   const resp = R.filter((x) => x.respondida), ok = resp.filter((x) => x.es_correcta).length;
   const tiempo = !e ? "—" : e.estado === "en_curso" ? `<span data-fin="${esc(e.termina_en)}"></span>` : `${minutos(e.iniciado_en, e.finalizado_en) ?? "—"} min`;
-  const porNivel = [1, 2, 3, 4, 5].map((n) => { const a = resp.filter((x) => x.dificultad === n); return { n, tot: a.length, ok: a.filter((x) => x.es_correcta).length }; });
+  const total = (e && e.total) || R.length;
+  const porNivel = [1, 2, 3, 4, 5].map((n) => { const a = resp.filter((x) => x.nivel === n); return { n, tot: a.length, ok: a.filter((x) => x.es_correcta).length }; });
   const curso = e && e.estado === "en_curso";
   dr.innerHTML = `
     <div class="drawer-h">${avatar(s.nombre)}
@@ -500,7 +501,7 @@ function pintarDetalle(dr, d) {
       <div class="dstats">
         <div class="card dstat"><span>Nota</span><b>${e.nota == null ? "—" : `<span class="grade ${gradeCls(e.nota)}" style="padding:0 6px">${fmtN(e.nota)}</span>`}</b></div>
         <div class="card dstat"><span>Aciertos</span><b>${ok}<small class="muted" style="font-size:14px"> / ${resp.length}</small></b></div>
-        <div class="card dstat"><span>Puntos</span><b>${e.puntos ?? R.reduce((a, x) => a + Number(x.puntos || 0), 0)}<small class="muted" style="font-size:14px"> / ${e.puntos_max ?? R.reduce((a, x) => a + x.dificultad, 0)}</small></b></div>
+        <div class="card dstat"><span>Puntos</span><b>${e.puntos ?? R.reduce((a, x) => a + Number(x.puntos || 0), 0)}<small class="muted" style="font-size:14px"> / ${e.puntos_max ?? "—"}</small></b></div>
         <div class="card dstat"><span>${curso ? "Restante" : "Duración"}</span><b class="num">${tiempo}</b></div>
       </div>
       <div class="actions">
@@ -513,7 +514,7 @@ function pintarDetalle(dr, d) {
       <div class="card panel"><div class="panel-h"><h3>Aciertos por nivel</h3></div><div class="panel-b"><div class="hbars">
         ${porNivel.map((p) => { const pc = p.tot ? Math.round((p.ok / p.tot) * 100) : null; return `<div class="hb"><div class="l">Nivel ${p.n}<small>${p.ok} de ${p.tot}</small></div><div class="t"><i class="${pctColor(pc)}" style="width:${pc || 0}%"></i></div><div class="v">${pc == null ? "—" : pc + "%"}</div></div>`; }).join("")}
       </div></div></div>
-      <div><h3 style="font-size:16px;margin:4px 0 12px">Respuestas (${resp.length} de ${R.length})</h3><div class="resp-list">
+      <div><h3 style="font-size:16px;margin:4px 0 12px">Respuestas (${resp.length} de ${total})</h3><div class="resp-list">
         ${R.filter((x) => x.orden != null).map((x) => `
           <div class="resp"><div class="n ${x.es_correcta ? "ok" : x.respondida ? "bad" : "pend"}">${x.orden}</div><div style="min-width:0">
             <div class="meta"><span class="lvl" style="width:22px;height:22px;font-size:11px">${x.dificultad}</span><span>${esc(x.tema || "")}</span>${x.segundos != null ? `<span>· ${x.segundos} s</span>` : ""}<span>· ${x.puntos} pts</span></div>
@@ -525,7 +526,7 @@ function pintarDetalle(dr, d) {
     </div>`;
   dr.querySelector("#d-x").addEventListener("click", cerrarDetalle);
   dr.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", () => copiar(b.dataset.copy, "Código copiado")));
-  dr.querySelectorAll("[data-a]").forEach((b) => b.addEventListener("click", () => accion(b.dataset.a, { ...f, id: s.id, nombre: s.nombre, codigo: s.codigo, respondidas: resp.length, total: R.length })));
+  dr.querySelectorAll("[data-a]").forEach((b) => b.addEventListener("click", () => accion(b.dataset.a, { ...f, id: s.id, nombre: s.nombre, codigo: s.codigo, respondidas: resp.length, total })));
   tickRelojes();
 }
 
@@ -630,7 +631,7 @@ CONSTRUIR.banco = () => `
       <p>Una fila por pregunta, separada por punto y coma (como guarda Excel en español):</p>
       <pre class="mono" style="background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px;overflow-x:auto;margin:12px 0">tema;enunciado;opcion_a;opcion_b;opcion_c;opcion_d;correcta;dificultad</pre>
       <ul style="padding-left:18px;margin:0;display:grid;gap:6px"><li><b>correcta</b>: letra A, B, C o D.</li><li><b>dificultad</b>: 1 (básica) a 5 (avanzada). Es también su valor en puntos.</li>
-        <li>Se aceptan de 2 a 4 opciones; deja vacías las que no uses.</li><li>Recomendado: al menos <b id="b-need">10</b> preguntas por nivel.</li></ul></div></div>
+        <li>Se aceptan de 2 a 4 opciones; deja vacías las que no uses.</li><li>Recomendado: al menos <b id="b-need">25</b> preguntas por nivel. Si un nivel se agota, se usa el más cercano.</li></ul></div></div>
   </div>
   <div class="card panel">
     <div class="toolbar">
@@ -649,13 +650,13 @@ ENLAZAR.banco = (v) => {
   v.querySelector("#b-ok").addEventListener("click", subirPreguntas);
 };
 PINTAR.banco = () => {
-  const B = S.banco || {}, pd = B.por_dificultad || {}, need = Math.floor(Number(B.n_preguntas || 50) / 5), st = S.ban;
+  const B = S.banco || {}, pd = B.por_dificultad || {}, need = Math.ceil(Number(B.n_preguntas || 50) / 2), st = S.ban;
   $("b-need").textContent = need;
   $("b-lv").innerHTML = [1, 2, 3, 4, 5].map((n) => {
     const v = pd[n] || 0, okk = v >= need;
     return `<div class="card level"><div class="h">Nivel ${n}<span class="pill ${okk ? "ok" : "warn"}">${okk ? "Suficiente" : "Faltan " + (need - v)}</span></div>
       <b>${v}</b><div class="meter"><i class="${okk ? "c-ok" : "c-warn"}" style="width:${Math.min(100, (v / need) * 100)}%"></i></div>
-      <small>${n} ${n === 1 ? "punto" : "puntos"} c/u · se usan ${need} por estudiante</small></div>`;
+      <small>${n} ${n === 1 ? "punto" : "puntos"} c/u · recomendado ${need}</small></div>`;
   }).join("");
   $("b-dif").innerHTML = [0, 1, 2, 3, 4, 5].map((n) => `<button class="${st.dif === n ? "on" : ""}" data-d="${n}">${n ? "N" + n : "Todos"}</button>`).join("");
   $("b-dif").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { st.dif = Number(b.dataset.d); PINTAR.banco(); }));
@@ -717,8 +718,8 @@ CONSTRUIR.ajustes = () => {
   return `<div class="settings">
     <div class="card panel"><div class="panel-h"><h3>Parámetros del parcial</h3><p class="desc">Aplican a los exámenes que se inicien después de guardar</p></div><div class="panel-b">
       <label class="field" style="margin-top:0"><span>Duración (minutos)</span><input class="input" id="s-dur" type="number" min="1"></label>
-      <label class="field"><span>Preguntas por estudiante</span><input class="input" id="s-n" type="number" min="5" step="5"></label>
-      <p class="muted" style="font-size:12.5px;margin-top:8px">Usa múltiplos de 5 para repartir igual entre los 5 niveles.</p>
+      <label class="field"><span>Preguntas por estudiante</span><input class="input" id="s-n" type="number" min="5"></label>
+      <p class="muted" style="font-size:12.5px;margin-top:8px">Todas las notas son sobre 20, con el mismo puntaje máximo para todos.</p>
       <button class="btn" id="s-ok" style="margin-top:16px">${icon("check")}Guardar parámetros</button></div></div>
     <div class="card panel"><div class="panel-h"><h3>Enlace para estudiantes</h3><p class="desc">Compártelo junto con el código de cada estudiante</p></div><div class="panel-b">
       <div class="linkbox"><input class="input" id="s-url" readonly value="${esc(url)}"><button class="btn secondary icon" id="s-copy" title="Copiar">${icon("copy")}</button></div>
@@ -729,10 +730,10 @@ CONSTRUIR.ajustes = () => {
       <button class="btn secondary" id="s-cok" style="margin-top:16px">${icon("lock")}Cambiar clave</button></div></div>
     <div class="card panel"><div class="panel-h"><h3>Cómo funciona el algoritmo</h3></div><div class="panel-b">
       <ol class="algo" style="margin:0;padding:0">
-        <li>A cada estudiante se le asigna un pool al azar con la misma cantidad de preguntas de cada nivel, así todos tienen el mismo puntaje máximo.</li>
-        <li>Empieza en el nivel 1 y recibe la pregunta no vista más cercana a su nivel actual.</li>
-        <li>Si acierta, sube un nivel; si falla, baja uno (entre 1 y 5).</li>
-        <li>Nota = puntos obtenidos ÷ puntos posibles × 20. Lo no respondido al acabarse el tiempo cuenta 0.</li>
+        <li>Empieza en el nivel 1. Cada pregunta se saca al azar de todo el banco, entre las del nivel actual que aún no ha visto.</li>
+        <li>Si acierta, la siguiente es de un nivel más (hasta el 5); si falla, de un nivel menos (nunca por debajo del 1).</li>
+        <li>Cada acierto vale su nivel: N1 = 1 punto … N5 = 5 puntos.</li>
+        <li>Nota = puntos obtenidos ÷ puntaje de un recorrido perfecto (1+2+3+4+5+5+…) × 20. Es igual para todos; lo no respondido cuenta 0.</li>
       </ol></div></div>
   </div>`;
 };
