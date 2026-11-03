@@ -24,6 +24,19 @@ Nunca se le dice al estudiante si acertó, ni su nivel, ni su nota: al terminar 
 
 La lógica vive en Postgres (`supabase/migrations/005_banco_adaptativo.sql`, funciones `parcial._estado` y `parcial._siguiente`). El navegador nunca recibe la respuesta correcta.
 
+## Salidas de la página
+
+Mientras el examen está en curso, la página registra cuándo el estudiante sale de ella:
+cambia de pestaña o de aplicación, minimiza, pasa a otra ventana por más de 2 s, o
+cierra o recarga la página. Al volver se calcula cuánto tiempo estuvo fuera. También se
+registra cuando copia texto. El estudiante está avisado en la pantalla de ingreso y
+recibe un aviso cada vez que vuelve.
+
+El profesor ve en vivo quién está fuera, el conteo y el tiempo fuera en la lista de
+estudiantes y en el export, y la cronología en el detalle (hora y pregunta en pantalla).
+Es un indicio, no una prueba: no detecta un segundo dispositivo (por ejemplo, un
+celular). Ver `supabase/migrations/006_salidas_de_pagina.sql`.
+
 ## Uso
 
 **Estudiantes:** abren `index.html`, ingresan con cédula y código personal.

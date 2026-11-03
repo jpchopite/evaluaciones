@@ -153,6 +153,12 @@ table.t { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 
 .lvl { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; font-weight: 800; font-size: 12.5px; background: var(--brand-50); color: var(--brand); }
 .flag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--warn); background: var(--warn-50); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
 .flag .i { width: 13px; height: 13px; }
+.flag.bad { color: var(--bad); background: var(--bad-50); }
+.live-item .flag { margin-top: 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.eventos { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.eventos li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 13px; padding: 8px 10px 8px 12px; border-radius: 10px; background: var(--warn-50); border-left: 3px solid var(--warn); }
+.eventos li.bad { background: var(--bad-50); border-left-color: var(--bad); }
+.eventos li .num { font-weight: 600; color: var(--muted); font-size: 12px; }
 .pctbar { display: flex; align-items: center; gap: 10px; min-width: 140px; }
 .pctbar .t2 { flex: 1; height: 8px; border-radius: 99px; background: var(--line-2); overflow: hidden; }
 .pctbar .t2 i { display: block; height: 100%; border-radius: inherit; }
