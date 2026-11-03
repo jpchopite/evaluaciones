@@ -35,6 +35,11 @@ Durante el examen no se puede seleccionar, copiar, cortar ni arrastrar el texto,
 derecho está desactivado. Cada intento de copiar se registra para el profesor. Esto frena
 el copiar y pegar, pero no impide una captura de pantalla ni escribir la pregunta a mano.
 
+La tecla Impr Pant (Windows) se registra como captura de pantalla y vacía el portapapeles
+para que la imagen no se pueda pegar. No se detectan capturas en Mac ni en celulares,
+las de otras herramientas (Recortes, programas de grabación) ni las fotos de la pantalla.
+Ver `supabase/migrations/007_capturas_de_pantalla.sql`.
+
 El profesor ve en vivo quién está fuera, el conteo y el tiempo fuera en la lista de
 estudiantes y en el export, y la cronología en el detalle (hora y pregunta en pantalla).
 Es un indicio, no una prueba: no detecta un segundo dispositivo (por ejemplo, un

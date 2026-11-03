@@ -56,7 +56,7 @@
         <div id="login-msg" class="msg err hide" role="alert"></div>
       </form>
       <div class="note"><span data-ic="info"></span><div>Cada respuesta es definitiva y no podrás volver atrás. Si pierdes la conexión, vuelve a ingresar: continuarás donde quedaste.</div></div>
-      <div class="note"><span data-ic="eye"></span><div>Mientras presentas, el profesor verá cada vez que salgas de esta página: otra pestaña, otra ventana u otra aplicación.</div></div>
+      <div class="note"><span data-ic="eye"></span><div>Mientras presentas, el profesor verá cada vez que salgas de esta página (otra pestaña, otra ventana u otra aplicación) o hagas una captura de pantalla.</div></div>
     </div>
   </div>
 </section>
@@ -294,6 +294,21 @@ document.addEventListener("copy", (e) => bloquear(e, true));
 document.addEventListener("cut", (e) => bloquear(e, true));
 document.addEventListener("contextmenu", (e) => bloquear(e, false));
 document.addEventListener("dragstart", (e) => bloquear(e, false));
+
+// Tecla Impr Pant (Windows): se registra y se vacía el portapapeles para que la
+// captura no se pueda pegar. Windows suele entregar solo keyup; algunos
+// navegadores también keydown, por eso se ignora un segundo aviso inmediato.
+let ultCaptura = 0;
+function captura(e) {
+  if (!enExamen() || (e.key !== "PrintScreen" && e.code !== "PrintScreen")) return;
+  if (Date.now() - ultCaptura < 1000) return;
+  ultCaptura = Date.now();
+  evento("captura");
+  if (navigator.clipboard) navigator.clipboard.writeText("").catch(() => {});
+  toast("Las capturas de pantalla no están permitidas. Quedó registrado para el profesor.", "err", 6000);
+}
+document.addEventListener("keyup", captura);
+document.addEventListener("keydown", captura);
 
 // Retomar sesión tras recargar la página
 (async function () {
