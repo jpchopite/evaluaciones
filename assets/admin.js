@@ -34,6 +34,7 @@ function salidasCell(f) {
   if (f.estado === "sin_iniciar") return `<span class="muted">—</span>`;
   const sm = (t) => `<div class="muted" style="font-size:11.5px">${t}</div>`;
   const extra = (f.capturas ? `<div><span class="flag bad">${icon("alert")}${f.capturas} ${f.capturas === 1 ? "captura" : "capturas"}</span></div>` : "")
+    + (f.posibles_capturas ? sm(`${f.posibles_capturas} ${f.posibles_capturas === 1 ? "posible captura" : "posibles capturas"}`) : "")
     + (f.copias ? sm(`intentó copiar ${veces(f.copias)}`) : "");
   if (f.fuera_ahora) return `<span class="flag bad">${icon("eye")}Fuera ahora</span>${sm(esc(salidasTxt(f)))}${extra}`;
   if (!f.salidas && !extra) return `<span class="muted">0</span>`;
@@ -484,11 +485,11 @@ function modalAgregar() {
   });
 }
 function exportarResultados() {
-  const cab = ["Nombre", "Cédula", "Código", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos", "Salidas de la página", "Minutos fuera", "Intentos de copiar", "Capturas de pantalla"];
+  const cab = ["Nombre", "Cédula", "Código", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos", "Salidas de la página", "Minutos fuera", "Intentos de copiar", "Capturas de pantalla", "Posibles capturas"];
   descargarCSV("resultados_parcial.csv", [cab, ...S.filas.map((f) => [
     f.nombre, f.cedula, f.codigo, ETIQ[f.estado], MOTIVO[f.motivo] || "", f.respondidas ?? "", f.total ?? "", f.correctas ?? "",
     f.puntos ?? "", f.puntos_max ?? "", f.nota == null ? "" : fmtN(f.nota), fechaCSV(f.iniciado_en), fechaCSV(f.finalizado_en),
-    minutos(f.iniciado_en, f.finalizado_en) ?? "", f.salidas ?? "", f.seg_fuera == null ? "" : fmtN(f.seg_fuera / 60, 1), f.copias ?? "", f.capturas ?? ""])]);
+    minutos(f.iniciado_en, f.finalizado_en) ?? "", f.salidas ?? "", f.seg_fuera == null ? "" : fmtN(f.seg_fuera / 60, 1), f.copias ?? "", f.capturas ?? "", f.posibles_capturas ?? ""])]);
 }
 
 // ── Detalle de un estudiante (cajón lateral) ──────────────────────────────
@@ -529,14 +530,16 @@ function salidasDetalle(e, EV) {
   EV.forEach((ev, i) => {
     if (ev.tipo === "copio") items.push({ en: ev.en, cls: "warn", txt: `Intentó copiar texto en la pregunta ${ev.pregunta_n} (bloqueado)` });
     if (ev.tipo === "captura") items.push({ en: ev.en, cls: "bad", txt: `Captura de pantalla (Impr Pant) en la pregunta ${ev.pregunta_n}` });
+    if (ev.tipo === "foco") items.push({ en: ev.en, cls: "warn", txt: `Posible captura: la página perdió el foco menos de 2 s en la pregunta ${ev.pregunta_n}` });
     if (ev.tipo !== "salio") return;
     const v = EV.slice(i + 1).find((x) => x.tipo === "volvio");
     const dur = v ? `volvió a los ${hms(v.segundos)}` : e.estado === "en_curso" ? "sigue fuera" : "no volvió antes de terminar";
     items.push({ en: ev.en, cls: v ? "warn" : "bad", txt: `${COMO_SALIO[ev.motivo] || "Salió de la página"} en la pregunta ${ev.pregunta_n} · ${dur}` });
   });
-  const desc = e.salidas || e.copias || e.capturas
+  const desc = e.salidas || e.copias || e.capturas || e.posibles_capturas
     ? `${e.salidas} ${e.salidas === 1 ? "salida" : "salidas"} · ${hms(e.seg_fuera)} fuera de la página`
       + (e.capturas ? ` · ${e.capturas} ${e.capturas === 1 ? "captura" : "capturas"} de pantalla` : "")
+      + (e.posibles_capturas ? ` · ${e.posibles_capturas} ${e.posibles_capturas === 1 ? "posible captura" : "posibles capturas"}` : "")
       + (e.copias ? ` · intentó copiar ${veces(e.copias)}` : "")
     : "No salió de la página del parcial.";
   return `<div class="card panel"><div class="panel-h"><h3>Salidas de la página</h3><p class="desc">${esc(desc)}</p></div>

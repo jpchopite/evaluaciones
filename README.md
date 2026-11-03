@@ -40,6 +40,11 @@ para que la imagen no se pueda pegar. No se detectan capturas en Mac ni en celul
 las de otras herramientas (Recortes, programas de grabación) ni las fotos de la pantalla.
 Ver `supabase/migrations/007_capturas_de_pantalla.sql`.
 
+Además, si la página pierde el foco menos de 2 s sin ocultarse (lo que ocurre al abrir
+Recortes con Win + Shift + S) se registra como posible captura, aparte de las salidas.
+Es una señal débil: un Alt+Tab rápido o una ventana emergente producen lo mismo, por
+eso no se avisa al estudiante. Ver `supabase/migrations/008_posibles_capturas.sql`.
+
 El profesor ve en vivo quién está fuera, el conteo y el tiempo fuera en la lista de
 estudiantes y en el export, y la cronología en el detalle (hora y pregunta en pantalla).
 Es un indicio, no una prueba: no detecta un segundo dispositivo (por ejemplo, un
