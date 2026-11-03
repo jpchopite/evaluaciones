@@ -27,6 +27,15 @@ function hms(s) {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0");
 }
+// Salidas de la página durante el examen (control antitrampa)
+function salidasTxt(f) { return `${f.salidas} ${f.salidas === 1 ? "salida" : "salidas"} · ${hms(f.seg_fuera || 0)} fuera`; }
+function salidasCell(f) {
+  if (f.estado === "sin_iniciar") return `<span class="muted">—</span>`;
+  if (f.fuera_ahora) return `<span class="flag bad">${icon("eye")}Fuera ahora</span><div class="muted" style="font-size:11.5px">${esc(salidasTxt(f))}</div>`;
+  if (!f.salidas && !f.copias) return `<span class="muted">0</span>`;
+  return `${f.salidas ? `<span class="flag">${icon("eye")}${f.salidas}</span><div class="muted" style="font-size:11.5px">${hms(f.seg_fuera || 0)} fuera</div>` : ""}
+    ${f.copias ? `<div class="muted" style="font-size:11.5px">copió ${f.copias} ${f.copias === 1 ? "vez" : "veces"}</div>` : ""}`;
+}
 function restante(iso) { return (Date.parse(iso) - Date.now()) / 1000; }
 function minutos(a, b) { return a && b ? Math.round((Date.parse(b) - Date.parse(a)) / 60000) : null; }
 function iniciales(n) { return String(n || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase(); }
@@ -260,6 +269,8 @@ PINTAR.resumen = () => {
       ${avatar(f.nombre)}
       <div style="min-width:0"><div class="nm">${esc(f.nombre)}</div>
         <div class="sm">${f.respondidas}/${f.total} respondidas · nivel actual ${f.nivel} · ${f.correctas} aciertos</div>
+        ${f.fuera_ahora ? `<span class="flag bad">${icon("eye")}Fuera de la página ahora · ${esc(salidasTxt(f))}</span>`
+          : f.salidas ? `<span class="flag">${icon("eye")}${esc(salidasTxt(f))}</span>` : ""}
         <div class="mini"><i style="width:${(f.respondidas / f.total) * 100}%"></i></div></div>
       <div style="display:grid;gap:4px;justify-items:end"><span class="tleft" data-fin="${esc(f.termina_en)}"></span>
         <button class="btn ghost sm" data-mas="${f.id}" title="Agregar 10 minutos">+10 min</button></div>
@@ -331,7 +342,7 @@ PINTAR.estudiantes = () => {
   rows = ordenar(rows, st.sort, st.dir);
   const tab = $("e-tab");
   tab.querySelector("thead").innerHTML = `<tr>${th("Estudiante", "nombre", st)}<th>Código</th>${th("Estado", "estado", st)}
-    ${th("Avance", "respondidas", st)}${th("Aciertos", "correctas", st, "r")}${th("Nota", "nota", st, "r")}<th class="r">Tiempo</th><th></th></tr>`;
+    ${th("Avance", "respondidas", st)}${th("Aciertos", "correctas", st, "r")}${th("Nota", "nota", st, "r")}${th("Salidas", "salidas", st, "r")}<th class="r">Tiempo</th><th></th></tr>`;
   bindSort(tab, st, PINTAR.estudiantes);
   tab.querySelector("tbody").innerHTML = rows.length ? rows.map((f) => {
     const t = f.estado === "en_curso" ? `<span class="tleft" data-fin="${esc(f.termina_en)}"></span><div class="muted" style="font-size:11.5px">restante</div>`
@@ -343,9 +354,10 @@ PINTAR.estudiantes = () => {
       <td class="prog">${f.estado === "sin_iniciar" ? `<span class="muted">—</span>` : `<small>${f.respondidas} / ${f.total}</small><div class="mini"><i style="width:${(f.respondidas / f.total) * 100}%"></i></div>`}</td>
       <td class="r num">${f.estado === "sin_iniciar" ? "—" : f.correctas}</td>
       <td class="r">${f.nota == null ? `<span class="muted">—</span>` : `<span class="grade ${gradeCls(f.nota)}">${fmtN(f.nota)}</span>`}</td>
+      <td class="r">${salidasCell(f)}</td>
       <td class="r">${t}</td>
       <td class="r"><button class="btn ghost sm icon" data-menu="${f.id}" aria-label="Acciones">${icon("more")}</button></td></tr>`;
-  }).join("") : `<tr><td colspan="8">${vacio("users", F.length ? "Ningún estudiante coincide con la búsqueda." : "Aún no hay estudiantes. Usa “Agregar estudiantes” para cargar la lista.")}</td></tr>`;
+  }).join("") : `<tr><td colspan="9">${vacio("users", F.length ? "Ningún estudiante coincide con la búsqueda." : "Aún no hay estudiantes. Usa “Agregar estudiantes” para cargar la lista.")}</td></tr>`;
   tab.querySelectorAll("tbody tr[data-id]").forEach((tr) => tr.addEventListener("click", (e) => {
     const f = S.filas.find((x) => x.id == tr.dataset.id);
     const cp = e.target.closest("[data-copy]"), mn = e.target.closest("[data-menu]");
@@ -445,11 +457,11 @@ function modalAgregar() {
   });
 }
 function exportarResultados() {
-  const cab = ["Nombre", "Cédula", "Código", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos"];
+  const cab = ["Nombre", "Cédula", "Código", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos", "Salidas de la página", "Minutos fuera", "Veces que copió"];
   descargarCSV("resultados_parcial.csv", [cab, ...S.filas.map((f) => [
     f.nombre, f.cedula, f.codigo, ETIQ[f.estado], MOTIVO[f.motivo] || "", f.respondidas ?? "", f.total ?? "", f.correctas ?? "",
     f.puntos ?? "", f.puntos_max ?? "", f.nota == null ? "" : fmtN(f.nota), fechaCSV(f.iniciado_en), fechaCSV(f.finalizado_en),
-    minutos(f.iniciado_en, f.finalizado_en) ?? ""])]);
+    minutos(f.iniciado_en, f.finalizado_en) ?? "", f.salidas ?? "", f.seg_fuera == null ? "" : fmtN(f.seg_fuera / 60, 1), f.copias ?? ""])]);
 }
 
 // ── Detalle de un estudiante (cajón lateral) ──────────────────────────────
@@ -482,6 +494,26 @@ function trayectoria(R) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Nivel de dificultad de cada pregunta presentada">${grid}${ticks}
     <polyline points="${pts}" fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linejoin="round" opacity=".55"/>${dots}</svg>`;
 }
+// Cronología de salidas: cada salida se empareja con el regreso que la sigue.
+const COMO_SALIO = { pestana: "Cambió de pestaña o de aplicación", ventana: "Pasó a otra ventana", cerro: "Cerró o recargó la página" };
+function salidasDetalle(e, EV) {
+  const hora = (iso) => new Date(iso).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const items = [];
+  EV.forEach((ev, i) => {
+    if (ev.tipo === "copio") items.push({ en: ev.en, cls: "warn", txt: `Copió texto en la pregunta ${ev.pregunta_n}` });
+    if (ev.tipo !== "salio") return;
+    const v = EV.slice(i + 1).find((x) => x.tipo === "volvio");
+    const dur = v ? `volvió a los ${hms(v.segundos)}` : e.estado === "en_curso" ? "sigue fuera" : "no volvió antes de terminar";
+    items.push({ en: ev.en, cls: v ? "warn" : "bad", txt: `${COMO_SALIO[ev.motivo] || "Salió de la página"} en la pregunta ${ev.pregunta_n} · ${dur}` });
+  });
+  const desc = e.salidas || e.copias
+    ? `${e.salidas} ${e.salidas === 1 ? "salida" : "salidas"} · ${hms(e.seg_fuera)} fuera de la página${e.copias ? ` · copió ${e.copias} ${e.copias === 1 ? "vez" : "veces"}` : ""}`
+    : "No salió de la página del parcial.";
+  return `<div class="card panel"><div class="panel-h"><h3>Salidas de la página</h3><p class="desc">${esc(desc)}</p></div>
+    ${items.length ? `<div class="panel-b"><ul class="eventos">${items.map((x) => `
+      <li class="${x.cls}"><span class="num">${hora(x.en)}</span><span>${esc(x.txt)}</span></li>`).join("")}</ul>
+      <p class="muted" style="font-size:12px;margin-top:10px">Una salida no prueba que haya hecho trampa (puede ser una notificación o un problema del equipo). Úsalo como indicio y compáralo con el tiempo y los aciertos de esas preguntas.</p></div>` : ""}</div>`;
+}
 function pintarDetalle(dr, d) {
   const s = d.estudiante, e = d.examen, R = d.respuestas || [];
   const f = S.filas.find((x) => x.id === s.id) || { ...s, estado: e ? e.estado : "sin_iniciar" };
@@ -509,6 +541,7 @@ function pintarDetalle(dr, d) {
         <button class="btn secondary sm" data-a="codigo">${icon("key")}Nuevo código</button>
         <button class="btn danger sm" data-a="reiniciar">${icon("undo")}Reiniciar intento</button>
       </div>
+      ${salidasDetalle(e, d.eventos || [])}
       <div class="card panel"><div class="panel-h"><h3>Recorrido adaptativo</h3><p class="desc">Nivel de cada pregunta presentada, en orden. Verde: acierto · rojo: fallo · gris: pendiente${curso ? ` · nivel actual: ${e.nivel}` : ""}</p></div>
         <div class="panel-b traj">${trayectoria(R)}</div></div>
       <div class="card panel"><div class="panel-h"><h3>Aciertos por nivel</h3></div><div class="panel-b"><div class="hbars">

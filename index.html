@@ -56,6 +56,7 @@
         <div id="login-msg" class="msg err hide" role="alert"></div>
       </form>
       <div class="note"><span data-ic="info"></span><div>Cada respuesta es definitiva y no podrás volver atrás. Si pierdes la conexión, vuelve a ingresar: continuarás donde quedaste.</div></div>
+      <div class="note"><span data-ic="eye"></span><div>Mientras presentas, el profesor verá cada vez que salgas de esta página: otra pestaña, otra ventana u otra aplicación.</div></div>
     </div>
   </div>
 </section>
@@ -208,6 +209,7 @@ $("f-login").addEventListener("submit", async (e) => {
     token = r.token;
     store.set(KEY, token);
     render(r);
+    if (enExamen()) evento("volvio"); // cierra una salida previa (cerró la página y volvió a ingresar)
   } catch (err) {
     setMsg($("login-msg"), err.message);
   } finally {
@@ -247,6 +249,40 @@ window.addEventListener("beforeunload", (e) => {
   if (!$("exam").classList.contains("hide")) { e.preventDefault(); e.returnValue = ""; }
 });
 
+// ── Control de salidas: avisa al profesor si deja la página del parcial ──
+// Cambiar de pestaña o minimizar se registra al instante; pasar a otra ventana
+// (la página sigue visible pero sin foco) solo si dura más de 2 s, para no
+// contar avisos del sistema u otros instantes sin importancia.
+let fuera = false, tSalida = null;
+const enExamen = () => token && !$("exam").classList.contains("hide");
+function evento(tipo, motivo) {
+  const { SUPABASE_URL, SUPABASE_KEY } = window.PARCIAL_CONFIG;
+  // keepalive: el aviso sale aunque la pestaña se esté ocultando o cerrando
+  fetch(`${SUPABASE_URL}/rest/v1/rpc/parcial_evento`, {
+    method: "POST", keepalive: true,
+    headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_token: token, p_tipo: tipo, p_motivo: motivo || null }),
+  }).catch(() => {});
+}
+function salir(motivo) {
+  if (!enExamen() || fuera) return;
+  fuera = true; evento("salio", motivo);
+}
+function volver() {
+  clearTimeout(tSalida);
+  if (!fuera || document.hidden || !document.hasFocus()) return;
+  fuera = false; evento("volvio");
+  toast("Saliste de la página del parcial. Quedó registrado para el profesor.", "warn", 6000);
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) { clearTimeout(tSalida); salir("pestana"); } else volver(); });
+window.addEventListener("blur", () => {
+  clearTimeout(tSalida);
+  if (enExamen()) tSalida = setTimeout(() => { if (!document.hasFocus()) salir("ventana"); }, 2000);
+});
+window.addEventListener("focus", volver);
+window.addEventListener("pagehide", () => salir("cerro"));
+document.addEventListener("copy", () => { if (enExamen()) evento("copio"); });
+
 // Retomar sesión tras recargar la página
 (async function () {
   const guardado = store.get(KEY);
@@ -254,6 +290,7 @@ window.addEventListener("beforeunload", (e) => {
   try {
     token = guardado;
     render(await rpc("parcial_estado", { p_token: token }));
+    if (enExamen()) evento("volvio");
   } catch (e) {
     store.del(KEY); token = null; show("login");
   }
