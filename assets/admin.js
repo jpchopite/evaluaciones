@@ -145,13 +145,36 @@ async function cargarResultados() {
 }
 async function cargarAnalisis() { S.an = await rpc("parcial_admin_analisis", { p_clave: S.clave }); }
 async function cargarBanco() { S.banco = await rpc("parcial_admin_banco", { p_clave: S.clave }); }
-async function refrescar(todo) {
-  try {
-    await Promise.all([cargarResultados(), todo ? cargarAnalisis() : null, todo ? cargarBanco() : null]);
-    pintarVista();
-    $("live").textContent = "En vivo · " + new Date().toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" });
-  } catch (e) { toast(e.message, "err"); }
+// Seguimiento en vivo: cada 5 s se recargan los estudiantes (avance, salidas) y el
+// detalle abierto; análisis y banco cambian poco y se recargan cada minuto.
+const VIVAS = ["resumen", "estudiantes"];
+let refrescando = null;
+async function refrescar(todo, auto) {
+  // El ciclo automático se salta si hay una recarga en curso; una pedida
+  // (botón o tras una acción) espera a que termine para mostrar lo más nuevo.
+  if (refrescando) { if (auto) return; await refrescando.catch(() => {}); }
+  refrescando = refrescar_(todo);
+  return refrescando;
 }
+async function refrescar_(todo) {
+  try {
+    await Promise.all([cargarResultados(), todo ? cargarAnalisis() : null, todo ? cargarBanco() : null, refrescarDetalle()]);
+    if (todo || VIVAS.includes(S.view)) pintarVista();
+    $("live").textContent = "En vivo · " + new Date().toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  } catch (e) { toast(e.message, "err"); }
+  finally { refrescando = null; }
+}
+async function refrescarDetalle() {
+  const id = S.detalleId;
+  if (!id || !drawerEls) return;
+  const d = await rpc("parcial_admin_detalle", { p_clave: S.clave, p_estudiante_id: id });
+  if (S.detalleId !== id || !drawerEls) return;
+  const dr = drawerEls[1], top = dr.scrollTop;
+  pintarDetalle(dr, d);
+  dr.scrollTop = top; // conservar dónde estaba leyendo
+}
+// No repintar mientras el profesor usa un menú o una ventana de confirmación.
+const ocupadoUI = () => menuEl || document.querySelector(".modal");
 
 // ── Acceso ────────────────────────────────────────────────────────────────
 async function entrar(c) {
@@ -161,7 +184,7 @@ async function entrar(c) {
   $("login").classList.add("hide"); $("app").classList.remove("hide");
   irA((location.hash || "#resumen").slice(1));
   let ciclo = 0;
-  setInterval(() => { if (!document.hidden) refrescar(++ciclo % 3 === 0); }, 20000);
+  setInterval(() => { if (!document.hidden && !ocupadoUI()) refrescar(++ciclo % 12 === 0, true); }, 5000);
   setInterval(tickRelojes, 1000);
 }
 $("f-login").addEventListener("submit", async (e) => {
