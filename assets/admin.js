@@ -34,7 +34,7 @@ function salidasCell(f) {
   if (f.fuera_ahora) return `<span class="flag bad">${icon("eye")}Fuera ahora</span><div class="muted" style="font-size:11.5px">${esc(salidasTxt(f))}</div>`;
   if (!f.salidas && !f.copias) return `<span class="muted">0</span>`;
   return `${f.salidas ? `<span class="flag">${icon("eye")}${f.salidas}</span><div class="muted" style="font-size:11.5px">${hms(f.seg_fuera || 0)} fuera</div>` : ""}
-    ${f.copias ? `<div class="muted" style="font-size:11.5px">copió ${f.copias} ${f.copias === 1 ? "vez" : "veces"}</div>` : ""}`;
+    ${f.copias ? `<div class="muted" style="font-size:11.5px">intentó copiar ${f.copias} ${f.copias === 1 ? "vez" : "veces"}</div>` : ""}`;
 }
 function restante(iso) { return (Date.parse(iso) - Date.now()) / 1000; }
 function minutos(a, b) { return a && b ? Math.round((Date.parse(b) - Date.parse(a)) / 60000) : null; }
@@ -457,7 +457,7 @@ function modalAgregar() {
   });
 }
 function exportarResultados() {
-  const cab = ["Nombre", "Cédula", "Código", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos", "Salidas de la página", "Minutos fuera", "Veces que copió"];
+  const cab = ["Nombre", "Cédula", "Código", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos", "Salidas de la página", "Minutos fuera", "Intentos de copiar"];
   descargarCSV("resultados_parcial.csv", [cab, ...S.filas.map((f) => [
     f.nombre, f.cedula, f.codigo, ETIQ[f.estado], MOTIVO[f.motivo] || "", f.respondidas ?? "", f.total ?? "", f.correctas ?? "",
     f.puntos ?? "", f.puntos_max ?? "", f.nota == null ? "" : fmtN(f.nota), fechaCSV(f.iniciado_en), fechaCSV(f.finalizado_en),
@@ -500,14 +500,14 @@ function salidasDetalle(e, EV) {
   const hora = (iso) => new Date(iso).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
   const items = [];
   EV.forEach((ev, i) => {
-    if (ev.tipo === "copio") items.push({ en: ev.en, cls: "warn", txt: `Copió texto en la pregunta ${ev.pregunta_n}` });
+    if (ev.tipo === "copio") items.push({ en: ev.en, cls: "warn", txt: `Intentó copiar texto en la pregunta ${ev.pregunta_n} (bloqueado)` });
     if (ev.tipo !== "salio") return;
     const v = EV.slice(i + 1).find((x) => x.tipo === "volvio");
     const dur = v ? `volvió a los ${hms(v.segundos)}` : e.estado === "en_curso" ? "sigue fuera" : "no volvió antes de terminar";
     items.push({ en: ev.en, cls: v ? "warn" : "bad", txt: `${COMO_SALIO[ev.motivo] || "Salió de la página"} en la pregunta ${ev.pregunta_n} · ${dur}` });
   });
   const desc = e.salidas || e.copias
-    ? `${e.salidas} ${e.salidas === 1 ? "salida" : "salidas"} · ${hms(e.seg_fuera)} fuera de la página${e.copias ? ` · copió ${e.copias} ${e.copias === 1 ? "vez" : "veces"}` : ""}`
+    ? `${e.salidas} ${e.salidas === 1 ? "salida" : "salidas"} · ${hms(e.seg_fuera)} fuera de la página${e.copias ? ` · intentó copiar ${e.copias} ${e.copias === 1 ? "vez" : "veces"}` : ""}`
     : "No salió de la página del parcial.";
   return `<div class="card panel"><div class="panel-h"><h3>Salidas de la página</h3><p class="desc">${esc(desc)}</p></div>
     ${items.length ? `<div class="panel-b"><ul class="eventos">${items.map((x) => `

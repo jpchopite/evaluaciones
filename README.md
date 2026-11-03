@@ -28,9 +28,12 @@ La lógica vive en Postgres (`supabase/migrations/005_banco_adaptativo.sql`, fun
 
 Mientras el examen está en curso, la página registra cuándo el estudiante sale de ella:
 cambia de pestaña o de aplicación, minimiza, pasa a otra ventana por más de 2 s, o
-cierra o recarga la página. Al volver se calcula cuánto tiempo estuvo fuera. También se
-registra cuando copia texto. El estudiante está avisado en la pantalla de ingreso y
-recibe un aviso cada vez que vuelve.
+cierra o recarga la página. Al volver se calcula cuánto tiempo estuvo fuera. El estudiante
+está avisado en la pantalla de ingreso y recibe un aviso cada vez que vuelve.
+
+Durante el examen no se puede seleccionar, copiar, cortar ni arrastrar el texto, y el clic
+derecho está desactivado. Cada intento de copiar se registra para el profesor. Esto frena
+el copiar y pegar, pero no impide una captura de pantalla ni escribir la pregunta a mano.
 
 El profesor ve en vivo quién está fuera, el conteo y el tiempo fuera en la lista de
 estudiantes y en el export, y la cronología en el detalle (hora y pregunta en pantalla).

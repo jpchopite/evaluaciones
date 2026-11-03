@@ -281,7 +281,19 @@ window.addEventListener("blur", () => {
 });
 window.addEventListener("focus", volver);
 window.addEventListener("pagehide", () => salir("cerro"));
-document.addEventListener("copy", () => { if (enExamen()) evento("copio"); });
+// Copiar, cortar, arrastrar texto y el clic derecho quedan bloqueados durante el
+// examen. El intento de copiar se sigue registrando para el profesor.
+let avisoCopia = 0;
+function bloquear(e, registrar) {
+  if (!enExamen()) return;
+  e.preventDefault();
+  if (registrar) evento("copio");
+  if (Date.now() - avisoCopia > 4000) { avisoCopia = Date.now(); toast("Copiar está deshabilitado durante el parcial.", "warn"); }
+}
+document.addEventListener("copy", (e) => bloquear(e, true));
+document.addEventListener("cut", (e) => bloquear(e, true));
+document.addEventListener("contextmenu", (e) => bloquear(e, false));
+document.addEventListener("dragstart", (e) => bloquear(e, false));
 
 // Retomar sesión tras recargar la página
 (async function () {
