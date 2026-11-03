@@ -275,11 +275,21 @@ function volver() {
   toast("Saliste de la página del parcial. Quedó registrado para el profesor.", "warn", 6000);
 }
 document.addEventListener("visibilitychange", () => { if (document.hidden) { clearTimeout(tSalida); salir("pestana"); } else volver(); });
+// Una pérdida de foco de menos de 2 s, sin ocultar la página, se registra aparte
+// como posible captura: es lo que ocurre al abrir Recortes (Win + Shift + S).
+// No se avisa al estudiante porque también puede ser un Alt+Tab o una ventana emergente.
+let perdioFoco = 0;
 window.addEventListener("blur", () => {
   clearTimeout(tSalida);
+  perdioFoco = enExamen() ? Date.now() : 0;
   if (enExamen()) tSalida = setTimeout(() => { if (!document.hasFocus()) salir("ventana"); }, 2000);
 });
-window.addEventListener("focus", volver);
+window.addEventListener("focus", () => {
+  const ms = perdioFoco ? Date.now() - perdioFoco : 0;
+  perdioFoco = 0;
+  if (enExamen() && !fuera && !document.hidden && ms >= 150 && ms < 2000) evento("foco");
+  volver();
+});
 window.addEventListener("pagehide", () => salir("cerro"));
 // Copiar, cortar, arrastrar texto y el clic derecho quedan bloqueados durante el
 // examen. El intento de copiar se sigue registrando para el profesor.
