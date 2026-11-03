@@ -51,6 +51,8 @@
 .progress > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--brand), #7aa2ff); transition: width .5s cubic-bezier(.2, .8, .2, 1); }
 
 .qwrap { max-width: 780px; margin: 0 auto; padding: 32px 20px 140px; }
+/* El texto del examen no se puede seleccionar (ver bloqueo de copia en index.html) */
+#exam { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .qmeta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .qnum { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 .chip { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: var(--line-2); color: var(--ink-2); }
