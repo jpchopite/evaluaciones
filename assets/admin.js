@@ -148,7 +148,25 @@ async function cargarResultados() {
   $("nav-curso").textContent = n; $("nav-curso").classList.toggle("hide", !n);
 }
 async function cargarAnalisis() { S.an = await rpc("parcial_admin_analisis", { p_clave: S.clave }); }
-async function cargarBanco() { S.banco = await rpc("parcial_admin_banco", { p_clave: S.clave }); }
+async function cargarBanco() { S.banco = await rpc("parcial_admin_banco", { p_clave: S.clave }); pintarEntrada(); }
+// Entrada al parcial: con la entrada cerrada nadie puede empezar; quien ya empezó puede volver a entrar.
+function pintarEntrada() {
+  const b = $("b-entrada"), ab = !S.banco || S.banco.entrada_abierta !== false;
+  b.classList.toggle("abierta", ab); b.classList.toggle("cerrada", !ab);
+  b.innerHTML = icon(ab ? "unlock" : "lock") + `<span>${ab ? "Entrada abierta" : "Entrada cerrada"}</span>`;
+}
+async function cambiarEntrada() {
+  const ab = !S.banco || S.banco.entrada_abierta !== false;
+  const ok = ab
+    ? await confirmar("¿Cerrar la entrada al parcial?", "Nadie más podrá empezar el parcial ni inscribirse. Quien ya lo empezó puede seguir y volver a entrar si pierde la conexión.", "Cerrar entrada", true)
+    : await confirmar("¿Abrir la entrada al parcial?", "Cualquier estudiante podrá entrar con su cédula y empezar el parcial.", "Abrir entrada");
+  if (!ok) return;
+  try {
+    await rpc("parcial_admin_entrada", { p_clave: S.clave, p_abierta: !ab });
+    await cargarBanco(); if (S.view === "ajustes") PINTAR.ajustes();
+    toast(ab ? "Entrada cerrada: nadie más puede empezar" : "Entrada abierta", "ok");
+  } catch (e) { toast(e.message, "err"); }
+}
 // Seguimiento en vivo: cada 5 s se recargan los estudiantes (avance, salidas) y el
 // detalle abierto; análisis y banco cambian poco y se recargan cada minuto.
 const VIVAS = ["resumen", "estudiantes"];
@@ -200,6 +218,7 @@ $("f-login").addEventListener("submit", async (e) => {
   finally { b.disabled = false; b.textContent = "Entrar al panel"; }
 });
 $("b-salir").addEventListener("click", () => { try { sessionStorage.removeItem("adm"); } catch (e) { /* ignorar */ } location.hash = ""; location.reload(); });
+$("b-entrada").addEventListener("click", cambiarEntrada);
 $("b-refresh").addEventListener("click", () => refrescar(true).then(() => toast("Datos actualizados", "ok", 1800)));
 $("b-menu").addEventListener("click", () => $("side").classList.toggle("open"));
 function pintarTema() { $("b-tema").innerHTML = icon(temaActual() === "dark" ? "sun" : "moon") + (temaActual() === "dark" ? "Tema claro" : "Tema oscuro"); }
