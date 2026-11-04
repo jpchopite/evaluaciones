@@ -38,7 +38,7 @@
     <div class="feats">
       <div class="feat"><div class="ic" data-ic="clock"></div><div><b id="f-dur">2 horas de duración</b><span>El reloj inicia al ingresar y no se detiene.</span></div></div>
       <div class="feat"><div class="ic" data-ic="trend"></div><div><b>Dificultad progresiva</b><span>Aciertas y sube el nivel; fallas y vuelve a bajar.</span></div></div>
-      <div class="feat"><div class="ic" data-ic="target"></div><div><b>Las difíciles valen más</b><span>Cada pregunta indica su valor en puntos (1 a 5).</span></div></div>
+      <div class="feat"><div class="ic" data-ic="target"></div><div><b>Las difíciles valen más</b><span>Las preguntas más exigentes suman más puntos.</span></div></div>
     </div>
   </aside>
 
@@ -78,7 +78,6 @@
       <div class="qmeta">
         <span class="qnum" id="qnum">Pregunta 1 de 50</span>
         <span class="chip" id="tema"></span>
-        <span class="valor"><span class="dots" id="dots"></span><span id="peso"></span></span>
       </div>
       <h2 class="qtext" id="enun"></h2>
       <div class="opts" id="opts" role="radiogroup" aria-labelledby="enun"></div>
@@ -101,6 +100,7 @@
     <div class="done-ic" data-ic="check"></div>
     <h2 style="font-size:24px" id="fin-tit">Parcial entregado</h2>
     <p class="muted" id="fin-sub" style="margin-top:6px"></p>
+    <div class="finpts hide" id="fin-pts"><span>Tu puntaje</span><b id="fs-pts">0</b><small>puntos</small></div>
     <div class="finstats">
       <div><b id="fs-resp">0</b><span>preguntas respondidas</span></div>
       <div><b id="fs-hora">—</b><span>hora de entrega</span></div>
@@ -163,8 +163,6 @@ function render(r) {
   $("prog-txt").textContent = `${r.respondidas} de ${r.total} respondidas`;
   $("bar").style.width = (r.respondidas / r.total) * 100 + "%";
   $("tema").textContent = qActual.tema || "General";
-  $("dots").innerHTML = [1, 2, 3, 4, 5].map((n) => `<i class="${n <= qActual.peso ? "on" : ""}"></i>`).join("");
-  $("peso").textContent = `${qActual.peso} ${qActual.peso === 1 ? "punto" : "puntos"}`;
   $("enun").textContent = qActual.enunciado;
   const cont = $("opts");
   cont.innerHTML = qActual.opciones.map((txt, i) => `
@@ -190,8 +188,10 @@ function mostrarFin(r) {
     entregado_por_profesor: "El profesor cerró tu parcial.",
     tiempo_agotado: "Se agotó el tiempo; las preguntas sin responder cuentan como 0.",
   };
-  // La nota no se muestra al estudiante: el servidor ni siquiera la envía.
+  // Se muestran los puntos obtenidos; la nota y el máximo no (el servidor no los envía).
   $("fin-sub").textContent = motivos[res.motivo] || "";
+  $("fin-pts").classList.toggle("hide", res.puntos == null);
+  $("fs-pts").textContent = res.puntos == null ? "" : String(Number(res.puntos));
   $("fs-resp").textContent = `${r.respondidas} / ${r.total}`;
   $("fs-hora").textContent = res.finalizado_en
     ? new Date(res.finalizado_en).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit" }) : "—";
