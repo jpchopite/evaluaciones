@@ -54,7 +54,7 @@ celular). Ver `supabase/migrations/006_salidas_de_pagina.sql`.
 
 ## Uso
 
-**Estudiantes:** abren `index.html` y escriben su cédula y su nombre. No hay código ni contraseña: entra cualquier cédula activa de la lista cargada por el profesor. El nombre no se valida; se registra en cada ingreso y el detalle del estudiante lo muestra en rojo si no coincide con el registrado. Ver `supabase/migrations/010_acceso_por_cedula.sql`.
+**Estudiantes:** abren `index.html` y escriben su cédula y su nombre. No hay código, contraseña ni lista previa: si la cédula no está registrada, el estudiante queda inscrito en ese momento con el nombre que escribió. Las cédulas se normalizan (`12.345.678`, `v-12345678` y `V12345678` son la misma) y para inscribirse deben ser venezolanas o de extranjero (V o E y 5 a 9 dígitos). Cada ingreso queda registrado con el nombre escrito, y el detalle del estudiante lo muestra en rojo si no coincide con el registrado. Ver `supabase/migrations/010_acceso_por_cedula.sql` y `011_inscripcion_abierta.sql`.
 
 **Profesor:** abre `admin.html` con la clave de administrador. El panel tiene cinco secciones:
 
@@ -66,7 +66,7 @@ celular). Ver `supabase/migrations/006_salidas_de_pagina.sql`.
 
 1. *Ajustes* → cambia la clave de administrador.
 2. *Banco de preguntas* → llena `plantilla_preguntas.xlsx` (tiene listas desplegables y un contador por nivel), guárdala como CSV y súbela; o sube el CSV (ver `plantilla_preguntas.csv`: `tema; enunciado; opcion_a…d; correcta; dificultad`). Conviene tener **al menos 25 por nivel**.
-3. *Estudiantes* → pega `cédula, nombre` (puedes copiar desde Excel). Solo esas cédulas pueden entrar.
+3. *Estudiantes* → opcional: pega `cédula, nombre` (puedes copiar desde Excel) para tener los nombres oficiales. «Quitar de la lista» impide que esa cédula vuelva a entrar.
 4. *Estudiantes* → avance en vivo y exportación a CSV. «Reiniciar» anula el intento de un estudiante (queda registrado) para que pueda empezar de nuevo.
 
 > El banco actual contiene **30 preguntas de ejemplo** (6 por nivel). Cárgalo con tus 200 usando «Reemplazar el banco actual».
@@ -79,6 +79,6 @@ Settings → Pages → *Deploy from a branch* → rama `main`, carpeta `/ (root)
 
 - Las tablas están en el esquema `parcial`, no expuesto por la API, con RLS activado y sin permisos para `anon`.
 - Todo acceso es mediante funciones `parcial_*`; las de estudiante exigen el token de su examen, las de profesor la clave de administrador (guardada con hash bcrypt).
-- **Sin código de acceso:** quien conozca la cédula de un estudiante de la lista puede entrar a su parcial (y continuarlo si ya empezó). Por eso cada ingreso queda registrado con el nombre escrito, y conviene que la cámara confirme quién presenta. Una cédula fuera de la lista se rechaza tras 1 s de espera.
+- **Inscripción abierta y sin código:** cualquiera con el enlace puede presentar escribiendo una cédula, y quien conozca la cédula de otro puede entrar a su parcial (y continuarlo si ya empezó). Por eso cada ingreso queda registrado con el nombre escrito, y conviene que la cámara confirme quién presenta y revisar la lista de Estudiantes al terminar.
 - La clave `sb_publishable_…` de `assets/config.js` es pública por diseño.
 - Limitación inherente a un examen web sin supervisión: no se puede impedir que un estudiante use otro dispositivo o busque respuestas; el azar por estudiante y el orden adaptivo reducen la utilidad de compartir respuestas, no la eliminan.

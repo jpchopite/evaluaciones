@@ -384,7 +384,7 @@ PINTAR.estudiantes = () => {
       <td class="r">${salidasCell(f)}</td>
       <td class="r">${t}</td>
       <td class="r"><button class="btn ghost sm icon" data-menu="${f.id}" aria-label="Acciones">${icon("more")}</button></td></tr>`;
-  }).join("") : `<tr><td colspan="8">${vacio("users", F.length ? "Ningún estudiante coincide con la búsqueda." : "Aún no hay estudiantes. Usa “Agregar estudiantes” para cargar la lista.")}</td></tr>`;
+  }).join("") : `<tr><td colspan="8">${vacio("users", F.length ? "Ningún estudiante coincide con la búsqueda." : "Aún no ha entrado ningún estudiante. Aparecen aquí al ingresar con su cédula; también puedes cargar la lista con “Agregar estudiantes”.")}</td></tr>`;
   tab.querySelectorAll("tbody tr[data-id]").forEach((tr) => tr.addEventListener("click", (e) => {
     const f = S.filas.find((x) => x.id == tr.dataset.id);
     const mn = e.target.closest("[data-menu]");
@@ -440,7 +440,7 @@ async function accion(tipo, f) {
       await rpc("parcial_admin_reiniciar", P);
       toast("Intento reiniciado", "ok");
     } else if (tipo === "quitar") {
-      if (!(await confirmar("¿Quitar de la lista?", `${f.nombre} ya no podrá ingresar y no aparecerá en los resultados.`, "Quitar", true))) return;
+      if (!(await confirmar("¿Quitar de la lista?", `${f.nombre} ya no podrá ingresar con esa cédula y no aparecerá en los resultados.`, "Quitar", true))) return;
       await rpc("parcial_admin_eliminar_estudiante", P);
       toast("Estudiante quitado", "ok");
       if (S.detalleId === f.id) cerrarDetalle();
@@ -452,7 +452,7 @@ async function accion(tipo, f) {
 
 function modalAgregar() {
   const { m, cerrar } = abrirModal(`<h3>Agregar estudiantes</h3>
-    <p class="d">Una línea por estudiante: <b>cédula, nombre</b>. Puedes pegar directamente desde Excel. Si la cédula ya existe, solo se actualiza el nombre. Para entrar, cada estudiante escribe su cédula y su nombre.</p>
+    <p class="d">Una línea por estudiante: <b>cédula, nombre</b>. Puedes pegar directamente desde Excel. Si la cédula ya existe, solo se actualiza el nombre. Es opcional: quien no esté en la lista se inscribe solo al entrar con su cédula y su nombre.</p>
     <textarea class="textarea" id="m-txt" style="margin-top:14px" placeholder="V12345678, María Pérez&#10;V23456789, Juan Rodríguez"></textarea>
     <div style="margin-top:10px"><label class="btn secondary sm"><span data-ic="upload"></span>Importar CSV<input type="file" id="m-file" accept=".csv,.txt" hidden></label>
       <span class="muted" id="m-cnt" style="font-size:13px;margin-left:10px"></span></div>
