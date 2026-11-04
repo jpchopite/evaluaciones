@@ -6,7 +6,7 @@ Plataforma web para aplicar el parcial: sitio estático (GitHub Pages) + base de
 - **50 preguntas por estudiante** (configurable), sacadas una a una al azar de **todo el banco** según su nivel. Además las opciones de cada pregunta se barajan por estudiante, para que copiar «la B» no sirva.
 - **Duración de 2 horas** (configurable) controlada por el servidor: el reloj del navegador es solo informativo. Al vencer, el examen se cierra y lo no respondido cuenta 0.
 - **Algoritmo adaptivo:** ver abajo.
-- **Nota sobre 20** para todos, con la misma escala: puntos obtenidos / puntaje de un recorrido perfecto × 20.
+- **Nota sobre 20** para todos, con la misma escala: puntos obtenidos / puntaje de referencia × 20 (por defecto, el de un recorrido perfecto).
 
 ## Algoritmo adaptivo
 
@@ -17,6 +17,8 @@ Cada estudiante tiene un *nivel* (1–5) que empieza en **1**.
 3. Se repite hasta responder las 50 preguntas o agotarse el tiempo.
 
 **Puntos y nota.** Cada acierto vale su nivel (N1 = 1 … N5 = 5). El puntaje máximo es el de un recorrido perfecto: 1+2+3+4+5+5+… (con 50 preguntas, **240**). Es el mismo para todos, así que la nota es comparable: quien acierta todo saca 20, y fallar no reduce el máximo (solo hace perder los puntos de esa pregunta y baja el nivel de la siguiente).
+
+**Escala de notas.** Dividir entre el recorrido perfecto es exigente: un estudiante que domina el nivel 3 suele sacar cerca de 7. En **Ajustes → Escala de notas** se puede bajar el *puntaje de referencia* (los puntos que valen 20), por ejemplo a 165: entonces 113 puntos dan 13,7 en vez de 9,4, y la nota se topa en 20. Al guardar se recalifican al instante todos los exámenes finalizados; los puntos y el orden entre estudiantes no cambian, y el estudiante no ve ninguna diferencia. Se acepta entre el 50 % y el 100 % del recorrido perfecto, y se guarda como proporción, así que se mantiene si cambia el número de preguntas. Ver `supabase/migrations/009_escala_de_notas.sql`.
 
 Si un nivel se queda sin preguntas no vistas, se usa la del nivel más cercano y se acredita el nivel del estudiante, para que no pierda puntos por un banco corto. Conviene tener **al menos 25 preguntas por nivel** (con 50 preguntas por examen).
 
