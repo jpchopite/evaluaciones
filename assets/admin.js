@@ -785,8 +785,12 @@ CONSTRUIR.ajustes = () => {
     <div class="card panel"><div class="panel-h"><h3>Parámetros del parcial</h3><p class="desc">Aplican a los exámenes que se inicien después de guardar</p></div><div class="panel-b">
       <label class="field" style="margin-top:0"><span>Duración (minutos)</span><input class="input" id="s-dur" type="number" min="1"></label>
       <label class="field"><span>Preguntas por estudiante</span><input class="input" id="s-n" type="number" min="5"></label>
-      <p class="muted" style="font-size:12.5px;margin-top:8px">Todas las notas son sobre 20, con el mismo puntaje máximo para todos.</p>
+      <p class="muted" style="font-size:12.5px;margin-top:8px">Todas las notas son sobre 20, con la misma escala para todos.</p>
       <button class="btn" id="s-ok" style="margin-top:16px">${icon("check")}Guardar parámetros</button></div></div>
+    <div class="card panel"><div class="panel-h"><h3>Escala de notas</h3><p class="desc">Puntos que valen 20. Al guardar se recalifican también los exámenes ya finalizados</p></div><div class="panel-b">
+      <label class="field" style="margin-top:0"><span>Puntaje de referencia</span><input class="input" id="s-ref" type="number" step="1"></label>
+      <p class="muted" id="s-ref-info" style="font-size:12.5px;margin-top:8px"></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="btn" id="s-rok">${icon("check")}Guardar escala</button><button class="btn secondary" id="s-rperf">Usar recorrido perfecto</button></div></div></div>
     <div class="card panel"><div class="panel-h"><h3>Enlace para estudiantes</h3><p class="desc">Compártelo junto con el código de cada estudiante</p></div><div class="panel-b">
       <div class="linkbox"><input class="input" id="s-url" readonly value="${esc(url)}"><button class="btn secondary icon" id="s-copy" title="Copiar">${icon("copy")}</button></div>
       <a class="btn secondary sm" href="index.html" target="_blank" rel="noopener" style="margin-top:12px">${icon("eye")}Abrir página del estudiante</a></div></div>
@@ -799,7 +803,7 @@ CONSTRUIR.ajustes = () => {
         <li>Empieza en el nivel 1. Cada pregunta se saca al azar de todo el banco, entre las del nivel actual que aún no ha visto.</li>
         <li>Si acierta, la siguiente es de un nivel más (hasta el 5); si falla, de un nivel menos (nunca por debajo del 1).</li>
         <li>Cada acierto vale su nivel: N1 = 1 punto … N5 = 5 puntos.</li>
-        <li>Nota = puntos obtenidos ÷ puntaje de un recorrido perfecto (1+2+3+4+5+5+…) × 20. Es igual para todos; lo no respondido cuenta 0.</li>
+        <li>Nota = puntos obtenidos ÷ puntaje de referencia × 20, con tope en 20. Por defecto la referencia es un recorrido perfecto (1+2+3+4+5+5+…); se puede bajar en Escala de notas. Es igual para todos; lo no respondido cuenta 0.</li>
       </ol></div></div>
   </div>`;
 };
@@ -811,6 +815,21 @@ ENLAZAR.ajustes = (v) => {
       await cargarBanco(); toast("Parámetros guardados", "ok");
     } catch (e) { toast(e.message, "err"); }
   });
+  v.querySelector("#s-ref").addEventListener("input", infoEscala);
+  const guardarEscala = async (ref) => {
+    const B = S.banco || {}, perf = Number(B.puntaje_perfecto) || 240, min = Math.ceil(perf / 2);
+    if (ref != null && !(ref >= min && ref <= perf)) return toast(`El puntaje de referencia debe estar entre ${min} y ${perf}`, "err");
+    const r = ref ?? perf;
+    if (r === Number(B.puntaje_ref)) return toast("La escala no cambió", "ok");
+    if (!(await confirmar("¿Cambiar la escala de notas?", `Con ${r} puntos se saca 20 y con ${mitad(r)} se saca 10. Se recalcularán las notas de todos los exámenes finalizados; los puntos de cada estudiante no cambian.`, "Cambiar y recalificar"))) return;
+    try {
+      const x = await rpc("parcial_admin_escala", { p_clave: S.clave, p_referencia: ref });
+      await Promise.all([cargarBanco(), cargarResultados()]); PINTAR.ajustes();
+      toast(`Escala guardada · ${x.recalificados} ${x.recalificados === 1 ? "examen recalificado" : "exámenes recalificados"}`, "ok");
+    } catch (e) { toast(e.message, "err"); }
+  };
+  v.querySelector("#s-rok").addEventListener("click", () => guardarEscala(Math.round(Number($("s-ref").value))));
+  v.querySelector("#s-rperf").addEventListener("click", () => guardarEscala(null));
   v.querySelector("#s-cok").addEventListener("click", async () => {
     const a = $("s-c1").value, b = $("s-c2").value;
     if (a !== b) return toast("Las claves no coinciden", "err");
@@ -825,7 +844,17 @@ PINTAR.ajustes = () => {
   const B = S.banco || {};
   if (document.activeElement !== $("s-dur")) $("s-dur").value = B.duracion_min ?? "";
   if (document.activeElement !== $("s-n")) $("s-n").value = B.n_preguntas ?? "";
+  if (document.activeElement !== $("s-ref")) $("s-ref").value = B.puntaje_ref ?? "";
+  infoEscala();
 };
+const mitad = (n) => (n % 2 ? fmtN(n / 2, 1) : n / 2);
+// Texto de ayuda de la escala: equivalencias con el valor escrito (aún sin guardar).
+function infoEscala() {
+  const B = S.banco || {}, perf = Number(B.puntaje_perfecto) || 0, ref = Math.round(Number($("s-ref").value));
+  if (!perf) return ($("s-ref-info").textContent = "");
+  $("s-ref-info").textContent = `Recorrido perfecto con ${B.n_preguntas} preguntas: ${perf} puntos.` +
+    (ref > 0 ? ` Con ${ref} (${Math.round(ref / perf * 100)} % del máximo): 10 se saca con ${mitad(ref)} puntos y 20 con ${ref}.` : "");
+}
 
 // Reanudar sesión del profesor en la misma pestaña
 (function () {
