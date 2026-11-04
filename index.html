@@ -46,12 +46,12 @@
     <button class="theme-btn" data-theme-btn aria-label="Cambiar tema"></button>
     <div class="auth-card">
       <h2>Ingresa al parcial</h2>
-      <p class="sub">Usa tu cédula y el código personal que te entregó el profesor.</p>
+      <p class="sub">Escribe tu cédula y tu nombre completo.</p>
       <form id="f-login" autocomplete="off" novalidate>
         <label class="field"><span>Cédula de identidad</span>
           <input class="input" id="ced" type="text" inputmode="numeric" required placeholder="V-12345678"></label>
-        <label class="field"><span>Código de acceso</span>
-          <input class="input code-input" id="cod" type="text" required maxlength="12" autocapitalize="characters" placeholder="••••••"></label>
+        <label class="field"><span>Nombre y apellido</span>
+          <input class="input" id="nom" type="text" required maxlength="80" autocomplete="name" autocapitalize="words" placeholder="María Pérez"></label>
         <button id="b-login" class="btn lg" type="submit" style="width:100%;margin-top:22px">Comenzar parcial</button>
         <div id="login-msg" class="msg err hide" role="alert"></div>
       </form>
@@ -200,11 +200,11 @@ function mostrarFin(r) {
 $("f-login").addEventListener("submit", async (e) => {
   e.preventDefault();
   setMsg($("login-msg"), "");
-  if (!$("ced").value.trim() || !$("cod").value.trim()) return setMsg($("login-msg"), "Escribe tu cédula y tu código.");
+  if (!$("ced").value.trim() || $("nom").value.trim().length < 3) return setMsg($("login-msg"), "Escribe tu cédula y tu nombre y apellido.");
   const b = $("b-login");
   b.disabled = true; b.innerHTML = `<span class="spinner"></span> Verificando…`;
   try {
-    const r = await rpc("parcial_iniciar", { p_cedula: $("ced").value, p_codigo: $("cod").value });
+    const r = await rpc("parcial_ingresar", { p_cedula: $("ced").value, p_nombre: $("nom").value });
     if (r.error) throw new Error(r.error);
     token = r.token;
     store.set(KEY, token);
