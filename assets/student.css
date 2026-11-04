@@ -28,6 +28,7 @@
 .auth-card { width: 100%; max-width: 420px; }
 .auth-card h2 { font-size: 28px; font-weight: 800; }
 .auth-card .sub { color: var(--muted); margin-top: 8px; }
+.auth-card .note.bad { margin: 16px 0 4px; background: var(--bad-50); color: var(--bad); }
 .auth-card .note { display: flex; gap: 10px; margin-top: 22px; padding: 12px 14px; border-radius: 12px; background: var(--amber-50); color: var(--warn); font-size: 13.5px; font-weight: 500; }
 
 /* Examen */
