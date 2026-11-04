@@ -54,20 +54,20 @@ celular). Ver `supabase/migrations/006_salidas_de_pagina.sql`.
 
 ## Uso
 
-**Estudiantes:** abren `index.html`, ingresan con cédula y código personal.
+**Estudiantes:** abren `index.html` y escriben su cédula y su nombre. No hay código ni contraseña: entra cualquier cédula activa de la lista cargada por el profesor. El nombre no se valida; se registra en cada ingreso y el detalle del estudiante lo muestra en rojo si no coincide con el registrado. Ver `supabase/migrations/010_acceso_por_cedula.sql`.
 
 **Profesor:** abre `admin.html` con la clave de administrador. El panel tiene cinco secciones:
 
 - **Panel de control:** indicadores en vivo (inscritos, en curso, finalizados, promedio, aprobados, duración), quién está respondiendo con su tiempo restante, distribución de notas, aciertos por nivel y por tema, y preguntas que conviene revisar.
-- **Estudiantes:** búsqueda, filtros y orden; códigos con un clic para copiar; acciones por estudiante (agregar tiempo, cerrar y calificar, nuevo código, reiniciar intento, quitar). Al hacer clic en un estudiante se abre su detalle: recorrido adaptativo (gráfico de nivel pregunta a pregunta), aciertos por nivel y cada respuesta con la opción elegida y la correcta.
+- **Estudiantes:** búsqueda, filtros y orden; acciones por estudiante (agregar tiempo, cerrar y calificar, reiniciar intento, quitar). Al hacer clic en un estudiante se abre su detalle: recorrido adaptativo (gráfico de nivel pregunta a pregunta), aciertos por nivel, cada respuesta con la opción elegida y la correcta, y sus ingresos y salidas de la página.
 - **Análisis de resultados:** por pregunta, % de acierto, tiempo mediano, índice de discriminación, distractor más elegido y alertas automáticas (p. ej. «un distractor supera a la correcta», señal de clave equivocada). Exporta el análisis o todas las respuestas a CSV.
 - **Banco de preguntas:** cobertura por nivel, carga de CSV arrastrando el archivo, activar o desactivar preguntas.
 - **Ajustes:** duración, preguntas por estudiante, enlace para estudiantes y cambio de clave.
 
 1. *Ajustes* → cambia la clave de administrador.
 2. *Banco de preguntas* → llena `plantilla_preguntas.xlsx` (tiene listas desplegables y un contador por nivel), guárdala como CSV y súbela; o sube el CSV (ver `plantilla_preguntas.csv`: `tema; enunciado; opcion_a…d; correcta; dificultad`). Conviene tener **al menos 25 por nivel**.
-3. *Estudiantes* → pega `cédula, nombre` (puedes copiar desde Excel). Se genera un código por estudiante.
-4. *Resultados* → ahí están los códigos para entregar, el avance en vivo y la exportación a CSV. «Reiniciar» anula el intento de un estudiante (queda registrado) para que pueda empezar de nuevo.
+3. *Estudiantes* → pega `cédula, nombre` (puedes copiar desde Excel). Solo esas cédulas pueden entrar.
+4. *Estudiantes* → avance en vivo y exportación a CSV. «Reiniciar» anula el intento de un estudiante (queda registrado) para que pueda empezar de nuevo.
 
 > El banco actual contiene **30 preguntas de ejemplo** (6 por nivel). Cárgalo con tus 200 usando «Reemplazar el banco actual».
 
@@ -79,6 +79,6 @@ Settings → Pages → *Deploy from a branch* → rama `main`, carpeta `/ (root)
 
 - Las tablas están en el esquema `parcial`, no expuesto por la API, con RLS activado y sin permisos para `anon`.
 - Todo acceso es mediante funciones `parcial_*`; las de estudiante exigen el token de su examen, las de profesor la clave de administrador (guardada con hash bcrypt).
-- Cinco intentos fallidos de código bloquean la cédula 5 minutos.
+- **Sin código de acceso:** quien conozca la cédula de un estudiante de la lista puede entrar a su parcial (y continuarlo si ya empezó). Por eso cada ingreso queda registrado con el nombre escrito, y conviene que la cámara confirme quién presenta. Una cédula fuera de la lista se rechaza tras 1 s de espera.
 - La clave `sb_publishable_…` de `assets/config.js` es pública por diseño.
 - Limitación inherente a un examen web sin supervisión: no se puede impedir que un estudiante use otro dispositivo o busque respuestas; el azar por estudiante y el orden adaptivo reducen la utilidad de compartir respuestas, no la eliminan.

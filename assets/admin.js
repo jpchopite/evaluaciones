@@ -9,7 +9,7 @@ const S = {
 };
 const VISTAS = {
   resumen: ["Panel de control", "Seguimiento en vivo del parcial"],
-  estudiantes: ["Estudiantes", "Códigos de acceso, avance y acciones por estudiante"],
+  estudiantes: ["Estudiantes", "Lista del parcial, avance y acciones por estudiante"],
   analisis: ["Análisis de resultados", "Desempeño por pregunta, nivel y tema"],
   banco: ["Banco de preguntas", "Carga, activación y cobertura por nivel"],
   ajustes: ["Ajustes", "Parámetros del parcial y seguridad"],
@@ -344,7 +344,7 @@ PINTAR.resumen = () => {
 CONSTRUIR.estudiantes = () => `
   <div class="card panel">
     <div class="toolbar">
-      <div class="search">${icon("search")}<input class="input sm" id="e-q" placeholder="Buscar por nombre, cédula o código" value="${esc(S.est.q)}"></div>
+      <div class="search">${icon("search")}<input class="input sm" id="e-q" placeholder="Buscar por nombre o cédula" value="${esc(S.est.q)}"></div>
       <div class="seg" id="e-seg"></div>
       <div class="end">
         <button class="btn secondary sm" id="e-exp"><span data-ic="download"></span>Exportar</button>
@@ -366,10 +366,10 @@ PINTAR.estudiantes = () => {
   $("e-seg").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { st.filtro = b.dataset.f; PINTAR.estudiantes(); }));
   const q = norm(st.q);
   let rows = F.filter((f) => (st.filtro === "todos" || f.estado === st.filtro) &&
-    (!q || norm(f.nombre + " " + f.cedula + " " + f.codigo).includes(q)));
+    (!q || norm(f.nombre + " " + f.cedula).includes(q)));
   rows = ordenar(rows, st.sort, st.dir);
   const tab = $("e-tab");
-  tab.querySelector("thead").innerHTML = `<tr>${th("Estudiante", "nombre", st)}<th>Código</th>${th("Estado", "estado", st)}
+  tab.querySelector("thead").innerHTML = `<tr>${th("Estudiante", "nombre", st)}${th("Estado", "estado", st)}
     ${th("Avance", "respondidas", st)}${th("Aciertos", "correctas", st, "r")}${th("Nota", "nota", st, "r")}${th("Salidas", "salidas", st, "r")}<th class="r">Tiempo</th><th></th></tr>`;
   bindSort(tab, st, PINTAR.estudiantes);
   tab.querySelector("tbody").innerHTML = rows.length ? rows.map((f) => {
@@ -377,7 +377,6 @@ PINTAR.estudiantes = () => {
       : f.estado === "finalizado" ? `<b class="num">${minutos(f.iniciado_en, f.finalizado_en) ?? "—"} min</b><div class="muted" style="font-size:11.5px">${esc(MOTIVO[f.motivo] || "")}</div>` : `<span class="muted">—</span>`;
     return `<tr class="click" data-id="${f.id}">
       <td><div class="who">${avatar(f.nombre)}<div><b>${esc(f.nombre)}</b><span>${esc(f.cedula)}</span></div></div></td>
-      <td><button class="codebtn" data-copy="${esc(f.codigo)}" title="Copiar código">${esc(f.codigo)}${icon("copy")}</button></td>
       <td><span class="pill ${f.estado}">${ETIQ[f.estado]}</span></td>
       <td class="prog">${f.estado === "sin_iniciar" ? `<span class="muted">—</span>` : `<small>${f.respondidas} / ${f.total}</small><div class="mini"><i style="width:${(f.respondidas / f.total) * 100}%"></i></div>`}</td>
       <td class="r num">${f.estado === "sin_iniciar" ? "—" : f.correctas}</td>
@@ -385,11 +384,10 @@ PINTAR.estudiantes = () => {
       <td class="r">${salidasCell(f)}</td>
       <td class="r">${t}</td>
       <td class="r"><button class="btn ghost sm icon" data-menu="${f.id}" aria-label="Acciones">${icon("more")}</button></td></tr>`;
-  }).join("") : `<tr><td colspan="9">${vacio("users", F.length ? "Ningún estudiante coincide con la búsqueda." : "Aún no hay estudiantes. Usa “Agregar estudiantes” para cargar la lista.")}</td></tr>`;
+  }).join("") : `<tr><td colspan="8">${vacio("users", F.length ? "Ningún estudiante coincide con la búsqueda." : "Aún no hay estudiantes. Usa “Agregar estudiantes” para cargar la lista.")}</td></tr>`;
   tab.querySelectorAll("tbody tr[data-id]").forEach((tr) => tr.addEventListener("click", (e) => {
     const f = S.filas.find((x) => x.id == tr.dataset.id);
-    const cp = e.target.closest("[data-copy]"), mn = e.target.closest("[data-menu]");
-    if (cp) { e.stopPropagation(); return copiar(cp.dataset.copy, "Código copiado"); }
+    const mn = e.target.closest("[data-menu]");
     if (mn) { e.stopPropagation(); return abrirMenu(mn, f); }
     abrirDetalle(f.id);
   }));
@@ -409,9 +407,9 @@ function abrirMenu(btn, f) {
   cerrarMenu();
   const curso = f.estado === "en_curso", ini = f.estado !== "sin_iniciar";
   const items = [
-    ["eye", "Ver detalle", "detalle"], ["copy", "Copiar código", "copiar"], null,
+    ["eye", "Ver detalle", "detalle"], null,
     curso && ["clock", "Agregar 10 minutos", "extender10"], curso && ["plus", "Tiempo adicional…", "extender"],
-    curso && ["flag", "Cerrar y calificar ahora", "entregar"], ["key", "Generar nuevo código", "codigo"],
+    curso && ["flag", "Cerrar y calificar ahora", "entregar"],
     ini && ["undo", "Reiniciar intento", "reiniciar", true], ["trash", "Quitar de la lista", "quitar", true],
   ];
   menuEl = document.createElement("div"); menuEl.className = "dd-menu"; menuEl.style.position = "fixed";
@@ -428,7 +426,6 @@ async function accion(tipo, f) {
   const P = { p_clave: S.clave, p_estudiante_id: f.id };
   try {
     if (tipo === "detalle") return abrirDetalle(f.id);
-    if (tipo === "copiar") return copiar(f.codigo, "Código copiado");
     if (tipo === "extender10" || tipo === "extender") {
       const n = tipo === "extender10" ? 10 : await pedirMinutos(f.nombre);
       if (!n) return;
@@ -438,10 +435,6 @@ async function accion(tipo, f) {
       if (!(await confirmar("¿Cerrar el parcial ahora?", `Se calificará el parcial de ${f.nombre} con lo que lleva respondido (${f.respondidas} de ${f.total}). Las preguntas pendientes cuentan 0.`, "Cerrar y calificar", true))) return;
       await rpc("parcial_admin_forzar_entrega", P);
       toast("Parcial cerrado y calificado", "ok");
-    } else if (tipo === "codigo") {
-      if (!(await confirmar("¿Generar un código nuevo?", `El código actual de ${f.nombre} (${f.codigo}) dejará de funcionar. Si está presentando, su sesión abierta continúa.`, "Generar código"))) return;
-      const c = await rpc("parcial_admin_nuevo_codigo", P);
-      toast(`Nuevo código de ${f.nombre}: ${c}`, "ok", 8000);
     } else if (tipo === "reiniciar") {
       if (!(await confirmar("¿Reiniciar el intento?", `El intento actual de ${f.nombre} se anulará (queda registrado) y podrá empezar de nuevo con otras preguntas y el tiempo completo.`, "Reiniciar intento", true))) return;
       await rpc("parcial_admin_reiniciar", P);
@@ -459,11 +452,11 @@ async function accion(tipo, f) {
 
 function modalAgregar() {
   const { m, cerrar } = abrirModal(`<h3>Agregar estudiantes</h3>
-    <p class="d">Una línea por estudiante: <b>cédula, nombre</b>. Puedes pegar directamente desde Excel. Si la cédula ya existe, solo se actualiza el nombre.</p>
+    <p class="d">Una línea por estudiante: <b>cédula, nombre</b>. Puedes pegar directamente desde Excel. Si la cédula ya existe, solo se actualiza el nombre. Para entrar, cada estudiante escribe su cédula y su nombre.</p>
     <textarea class="textarea" id="m-txt" style="margin-top:14px" placeholder="V12345678, María Pérez&#10;V23456789, Juan Rodríguez"></textarea>
     <div style="margin-top:10px"><label class="btn secondary sm"><span data-ic="upload"></span>Importar CSV<input type="file" id="m-file" accept=".csv,.txt" hidden></label>
       <span class="muted" id="m-cnt" style="font-size:13px;margin-left:10px"></span></div>
-    <div class="foot"><button class="btn secondary" data-close>Cancelar</button><button class="btn" id="m-ok">Agregar y generar códigos</button></div>`, true);
+    <div class="foot"><button class="btn secondary" data-close>Cancelar</button><button class="btn" id="m-ok">Agregar a la lista</button></div>`, true);
   const txt = m.querySelector("#m-txt");
   const lista = () => {
     let rows = parseCSV(txt.value);
@@ -479,15 +472,15 @@ function modalAgregar() {
     e.target.disabled = true;
     try {
       const r = await rpc("parcial_admin_cargar_estudiantes", { p_clave: S.clave, p_estudiantes: L });
-      cerrar(); toast(`${r.procesados} estudiantes cargados con su código`, "ok");
+      cerrar(); toast(`${r.procesados} estudiantes cargados`, "ok");
       await refrescar(false);
     } catch (err) { toast(err.message, "err"); e.target.disabled = false; }
   });
 }
 function exportarResultados() {
-  const cab = ["Nombre", "Cédula", "Código", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos", "Salidas de la página", "Minutos fuera", "Intentos de copiar", "Capturas de pantalla", "Posibles capturas"];
+  const cab = ["Nombre", "Cédula", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos", "Salidas de la página", "Minutos fuera", "Intentos de copiar", "Capturas de pantalla", "Posibles capturas"];
   descargarCSV("resultados_parcial.csv", [cab, ...S.filas.map((f) => [
-    f.nombre, f.cedula, f.codigo, ETIQ[f.estado], MOTIVO[f.motivo] || "", f.respondidas ?? "", f.total ?? "", f.correctas ?? "",
+    f.nombre, f.cedula, ETIQ[f.estado], MOTIVO[f.motivo] || "", f.respondidas ?? "", f.total ?? "", f.correctas ?? "",
     f.puntos ?? "", f.puntos_max ?? "", f.nota == null ? "" : fmtN(f.nota), fechaCSV(f.iniciado_en), fechaCSV(f.finalizado_en),
     minutos(f.iniciado_en, f.finalizado_en) ?? "", f.salidas ?? "", f.seg_fuera == null ? "" : fmtN(f.seg_fuera / 60, 1), f.copias ?? "", f.capturas ?? "", f.posibles_capturas ?? ""])]);
 }
@@ -524,10 +517,19 @@ function trayectoria(R) {
 }
 // Cronología de salidas: cada salida se empareja con el regreso que la sigue.
 const COMO_SALIO = { pestana: "Cambió de pestaña o de aplicación", ventana: "Pasó a otra ventana", cerro: "Cerró o recargó la página" };
-function salidasDetalle(e, EV) {
+// ¿El nombre escrito al ingresar corresponde al registrado? Uno debe contener todas las palabras del otro
+// (así no se marca a quien escribe un segundo apellido o solo nombre y apellido).
+const mismoNombre = (escrito, registrado) => {
+  const e = norm(escrito).trim().split(/\s+/), r = norm(registrado).trim().split(/\s+/);
+  return e.every((p) => r.includes(p)) || r.every((p) => e.includes(p));
+};
+function salidasDetalle(e, EV, nombre) {
   const hora = (iso) => new Date(iso).toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
   const items = [];
   EV.forEach((ev, i) => {
+    if (ev.tipo === "ingreso") items.push(mismoNombre(ev.motivo || "", nombre)
+      ? { en: ev.en, cls: "info", txt: `Ingresó como «${ev.motivo}»${ev.pregunta_n > 1 ? ` en la pregunta ${ev.pregunta_n}` : ""}` }
+      : { en: ev.en, cls: "bad", txt: `Ingresó como «${ev.motivo}», que no coincide con el nombre registrado${ev.pregunta_n > 1 ? ` (pregunta ${ev.pregunta_n})` : ""}` });
     if (ev.tipo === "copio") items.push({ en: ev.en, cls: "warn", txt: `Intentó copiar texto en la pregunta ${ev.pregunta_n} (bloqueado)` });
     if (ev.tipo === "captura") items.push({ en: ev.en, cls: "bad", txt: `Captura de pantalla (Impr Pant) en la pregunta ${ev.pregunta_n}` });
     if (ev.tipo === "foco") items.push({ en: ev.en, cls: "warn", txt: `Posible captura: la página perdió el foco menos de 2 s en la pregunta ${ev.pregunta_n}` });
@@ -542,7 +544,7 @@ function salidasDetalle(e, EV) {
       + (e.posibles_capturas ? ` · ${e.posibles_capturas} ${e.posibles_capturas === 1 ? "posible captura" : "posibles capturas"}` : "")
       + (e.copias ? ` · intentó copiar ${veces(e.copias)}` : "")
     : "No salió de la página del parcial.";
-  return `<div class="card panel"><div class="panel-h"><h3>Salidas de la página</h3><p class="desc">${esc(desc)}</p></div>
+  return `<div class="card panel"><div class="panel-h"><h3>Ingresos y salidas de la página</h3><p class="desc">${esc(desc)}</p></div>
     ${items.length ? `<div class="panel-b"><ul class="eventos">${items.map((x) => `
       <li class="${x.cls}"><span class="num">${hora(x.en)}</span><span>${esc(x.txt)}</span></li>`).join("")}</ul>
       <p class="muted" style="font-size:12px;margin-top:10px">Una salida no prueba que haya hecho trampa (puede ser una notificación o un problema del equipo). Úsalo como indicio y compáralo con el tiempo y los aciertos de esas preguntas.</p></div>` : ""}</div>`;
@@ -558,7 +560,7 @@ function pintarDetalle(dr, d) {
   dr.innerHTML = `
     <div class="drawer-h">${avatar(s.nombre)}
       <div style="flex:1;min-width:0"><h2>${esc(s.nombre)}</h2>
-        <div class="sm"><span>${esc(s.cedula)}</span><button class="codebtn" data-copy="${esc(s.codigo)}">${esc(s.codigo)}${icon("copy")}</button>
+        <div class="sm"><span>${esc(s.cedula)}</span>
           <span class="pill ${f.estado}">${ETIQ[f.estado]}</span>${d.intentos_anulados ? `<span class="pill">${d.intentos_anulados} intento(s) anulado(s)</span>` : ""}</div></div>
       <button class="btn ghost icon" id="d-x" aria-label="Cerrar">${icon("x")}</button></div>
     <div class="drawer-b">
@@ -571,10 +573,9 @@ function pintarDetalle(dr, d) {
       </div>
       <div class="actions">
         ${curso ? `<button class="btn secondary sm" data-a="extender10">${icon("clock")}+10 min</button><button class="btn secondary sm" data-a="extender">${icon("plus")}Otro tiempo</button><button class="btn secondary sm" data-a="entregar">${icon("flag")}Cerrar y calificar</button>` : ""}
-        <button class="btn secondary sm" data-a="codigo">${icon("key")}Nuevo código</button>
         <button class="btn danger sm" data-a="reiniciar">${icon("undo")}Reiniciar intento</button>
       </div>
-      ${salidasDetalle(e, d.eventos || [])}
+      ${salidasDetalle(e, d.eventos || [], s.nombre)}
       <div class="card panel"><div class="panel-h"><h3>Recorrido adaptativo</h3><p class="desc">Nivel de cada pregunta presentada, en orden. Verde: acierto · rojo: fallo · gris: pendiente${curso ? ` · nivel actual: ${e.nivel}` : ""}</p></div>
         <div class="panel-b traj">${trayectoria(R)}</div></div>
       <div class="card panel"><div class="panel-h"><h3>Aciertos por nivel</h3></div><div class="panel-b"><div class="hbars">
@@ -591,8 +592,7 @@ function pintarDetalle(dr, d) {
       </div></div>`}
     </div>`;
   dr.querySelector("#d-x").addEventListener("click", cerrarDetalle);
-  dr.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", () => copiar(b.dataset.copy, "Código copiado")));
-  dr.querySelectorAll("[data-a]").forEach((b) => b.addEventListener("click", () => accion(b.dataset.a, { ...f, id: s.id, nombre: s.nombre, codigo: s.codigo, respondidas: resp.length, total })));
+  dr.querySelectorAll("[data-a]").forEach((b) => b.addEventListener("click", () => accion(b.dataset.a, { ...f, id: s.id, nombre: s.nombre, respondidas: resp.length, total })));
   tickRelojes();
 }
 
@@ -791,7 +791,7 @@ CONSTRUIR.ajustes = () => {
       <label class="field" style="margin-top:0"><span>Puntaje de referencia</span><input class="input" id="s-ref" type="number" step="1"></label>
       <p class="muted" id="s-ref-info" style="font-size:12.5px;margin-top:8px"></p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="btn" id="s-rok">${icon("check")}Guardar escala</button><button class="btn secondary" id="s-rperf">Usar recorrido perfecto</button></div></div></div>
-    <div class="card panel"><div class="panel-h"><h3>Enlace para estudiantes</h3><p class="desc">Compártelo junto con el código de cada estudiante</p></div><div class="panel-b">
+    <div class="card panel"><div class="panel-h"><h3>Enlace para estudiantes</h3><p class="desc">Cada estudiante entra con su cédula y su nombre</p></div><div class="panel-b">
       <div class="linkbox"><input class="input" id="s-url" readonly value="${esc(url)}"><button class="btn secondary icon" id="s-copy" title="Copiar">${icon("copy")}</button></div>
       <a class="btn secondary sm" href="index.html" target="_blank" rel="noopener" style="margin-top:12px">${icon("eye")}Abrir página del estudiante</a></div></div>
     <div class="card panel"><div class="panel-h"><h3>Seguridad</h3><p class="desc">Cambia la clave de este panel (mínimo 8 caracteres)</p></div><div class="panel-b">
