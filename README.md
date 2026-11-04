@@ -56,6 +56,8 @@ celular). Ver `supabase/migrations/006_salidas_de_pagina.sql`.
 
 **Estudiantes:** abren `index.html` y escriben su cédula y su nombre. No hay código, contraseña ni lista previa: si la cédula no está registrada, el estudiante queda inscrito en ese momento con el nombre que escribió. Las cédulas se normalizan (`12.345.678`, `v-12345678` y `V12345678` son la misma) y para inscribirse deben ser venezolanas o de extranjero (V o E y 5 a 9 dígitos). Cada ingreso queda registrado con el nombre escrito, y el detalle del estudiante lo muestra en rojo si no coincide con el registrado. Ver `supabase/migrations/010_acceso_por_cedula.sql` y `011_inscripcion_abierta.sql`.
 
+**Entrada al parcial:** el botón «Entrada abierta / cerrada» de la barra superior del panel la abre o la cierra. Con la entrada cerrada nadie puede empezar el parcial ni inscribirse; quien ya lo empezó puede seguir, volver a entrar si pierde la conexión y ver sus puntos al terminar. Por defecto está abierta. Ver `supabase/migrations/014_abrir_cerrar_entrada.sql`.
+
 **Profesor:** abre `admin.html` con la clave de administrador. El panel tiene cinco secciones:
 
 - **Panel de control:** indicadores en vivo (inscritos, en curso, finalizados, promedio, aprobados, duración), quién está respondiendo con su tiempo restante, distribución de notas, aciertos por nivel y por tema, y preguntas que conviene revisar.

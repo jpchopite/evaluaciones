@@ -35,6 +35,10 @@
 .topbar h1 { font-size: 22px; font-weight: 800; }
 .topbar .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .topbar .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.entrada { border: 1px solid transparent; }
+.entrada.abierta { background: var(--ok-50); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+.entrada.cerrada { background: var(--bad-50); color: var(--bad); border-color: color-mix(in srgb, var(--bad) 35%, transparent); }
+.entrada:hover { filter: brightness(.97); }
 .live { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); font-weight: 500; }
 .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 22%, transparent); animation: blink 2s infinite; }
 .menu-btn { display: none; }
