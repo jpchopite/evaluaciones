@@ -22,7 +22,7 @@ Cada estudiante tiene un *nivel* (1–5) que empieza en **1**.
 
 Si un nivel se queda sin preguntas no vistas, se usa la del nivel más cercano y se acredita el nivel del estudiante, para que no pierda puntos por un banco corto. Conviene tener **al menos 25 preguntas por nivel** (con 50 preguntas por examen).
 
-Nunca se le dice al estudiante si acertó, ni su nivel, ni su nota: al terminar solo ve la confirmación de entrega; los resultados son solo para el profesor.
+Durante el examen nunca se le dice al estudiante si acertó ni su nivel. Al terminar ve la confirmación de entrega y **los puntos que obtuvo**, sin el máximo ni la nota: la nota es solo para el profesor. Ver `supabase/migrations/012_puntos_al_finalizar.sql`.
 
 La lógica vive en Postgres (`supabase/migrations/005_banco_adaptativo.sql`, funciones `parcial._estado` y `parcial._siguiente`). El navegador nunca recibe la respuesta correcta.
 
