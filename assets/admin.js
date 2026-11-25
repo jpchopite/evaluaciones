@@ -6,12 +6,14 @@ const S = {
   ana: { q: "", dif: 0, revisar: false, sort: "dificultad", dir: 1 },
   ban: { q: "", dif: 0, act: "todas" },
   abiertas: new Set(), detalleId: null, csvPreguntas: [],
+  arch: { lista: null, id: null, datos: null, tab: "resumen", est: { sort: "nombre", dir: 1 }, pre: { sort: "dificultad", dir: 1 } },
 };
 const VISTAS = {
   resumen: ["Panel de control", "Seguimiento en vivo del parcial"],
   estudiantes: ["Estudiantes", "Lista del parcial, avance y acciones por estudiante"],
   analisis: ["Análisis de resultados", "Desempeño por pregunta, nivel y tema"],
   banco: ["Banco de preguntas", "Carga, activación y cobertura por nivel"],
+  archivo: ["Parcial anterior", "Estadísticas guardadas de parciales ya cerrados"],
   ajustes: ["Ajustes", "Parámetros del parcial y seguridad"],
 };
 const ETIQ = { sin_iniciar: "Sin iniciar", en_curso: "En curso", finalizado: "Finalizado" };
@@ -289,6 +291,28 @@ CONSTRUIR.resumen = () => `
     <div id="r-rev"></div>
   </div>`;
 
+// Gráficos del análisis, compartidos por el panel en vivo y el parcial archivado.
+function htmlHist(an) {
+  const R = (an && an.resumen) || {}, dist = (an && an.distribucion) || [], max = Math.max(1, ...dist);
+  return R.finalizados ? `
+    <div class="hist">${dist.map((n, i) => `
+      <div class="col"><div class="bar ${i < 5 ? "low" : ""}" style="height:${(n / max) * 82}%" title="${n} estudiantes"><b>${n || ""}</b></div>
+      <span class="lab">${i * 2}–${i * 2 + 2}</span></div>`).join("")}</div>
+    <div class="legend"><span><i style="background:var(--bad)"></i>Menos de 10</span><span><i style="background:var(--brand)"></i>10 o más</span>
+      <span>Desviación: <b>${fmtN(R.desv)}</b></span><span>Rango: <b>${fmtN(R.min)} – ${fmtN(R.max)}</b></span></div>`
+    : vacio("chart", "La distribución aparecerá cuando haya exámenes finalizados.");
+}
+function htmlHbars(rows, lab, sub) {
+  return rows.length ? `<div class="hbars">${rows.map((r) => `
+    <div class="hb"><div class="l">${esc(lab(r))}<small>${esc(sub(r))}</small></div>
+      <div class="t"><i class="${pctColor(r.pct)}" style="width:${r.pct}%"></i></div><div class="v">${fmtN(r.pct, 0)}%</div></div>`).join("")}</div>`
+    : vacio("chart", "Sin respuestas todavía.");
+}
+const htmlNiveles = (an) => htmlHbars((an && an.por_dificultad) || [], (r) => `Nivel ${r.dificultad}`, (r) => `${r.n} resp. · ${r.seg_med ?? "—"} s`);
+const htmlTemas = (an) => htmlHbars((an && an.por_tema) || [], (r) => r.tema, (r) => `${r.n} respuestas`);
+const htmlKpis = (rows) => rows.map(([ic, cl, lab, val, unit, foot]) => `<div class="card kpi"><div class="lab"><span class="ic ${cl}">${icon(ic)}</span>${lab}</div>
+    <div class="val">${esc(val)}<small>${esc(unit)}</small></div><div class="foot">${esc(foot)}</div></div>`).join("");
+
 PINTAR.resumen = () => {
   const F = S.filas, c = (e) => F.filter((f) => f.estado === e).length;
   const fin = c("finalizado"), cur = c("en_curso"), sin = c("sin_iniciar");
@@ -328,22 +352,9 @@ PINTAR.resumen = () => {
     abrirDetalle(Number(el.dataset.det));
   }));
 
-  const dist = (S.an && S.an.distribucion) || [];
-  const max = Math.max(1, ...dist);
-  $("r-hist").innerHTML = R.finalizados ? `
-    <div class="hist">${dist.map((n, i) => `
-      <div class="col"><div class="bar ${i < 5 ? "low" : ""}" style="height:${(n / max) * 82}%" title="${n} estudiantes"><b>${n || ""}</b></div>
-      <span class="lab">${i * 2}–${i * 2 + 2}</span></div>`).join("")}</div>
-    <div class="legend"><span><i style="background:var(--bad)"></i>Menos de 10</span><span><i style="background:var(--brand)"></i>10 o más</span>
-      <span>Desviación: <b>${fmtN(R.desv)}</b></span><span>Rango: <b>${fmtN(R.min)} – ${fmtN(R.max)}</b></span></div>`
-    : vacio("chart", "La distribución aparecerá cuando haya exámenes finalizados.");
-
-  const hb = (rows, lab, sub) => rows.length ? `<div class="hbars">${rows.map((r) => `
-    <div class="hb"><div class="l">${esc(lab(r))}<small>${esc(sub(r))}</small></div>
-      <div class="t"><i class="${pctColor(r.pct)}" style="width:${r.pct}%"></i></div><div class="v">${fmtN(r.pct, 0)}%</div></div>`).join("")}</div>`
-    : vacio("chart", "Sin respuestas todavía.");
-  $("r-dif").innerHTML = hb((S.an && S.an.por_dificultad) || [], (r) => `Nivel ${r.dificultad}`, (r) => `${r.n} resp. · ${r.seg_med ?? "—"} s`);
-  $("r-tema").innerHTML = hb((S.an && S.an.por_tema) || [], (r) => r.tema, (r) => `${r.n} respuestas`);
+  $("r-hist").innerHTML = htmlHist(S.an);
+  $("r-dif").innerHTML = htmlNiveles(S.an);
+  $("r-tema").innerHTML = htmlTemas(S.an);
 
   const rev = ((S.an && S.an.por_pregunta) || []).map((q) => ({ ...q, al: alertas(q) })).filter((q) => q.al.length)
     .sort((a, b) => b.al.length - a.al.length || a.pct - b.pct).slice(0, 6);
@@ -374,7 +385,7 @@ CONSTRUIR.estudiantes = () => `
   </div>`;
 ENLAZAR.estudiantes = (v) => {
   v.querySelector("#e-q").addEventListener("input", (e) => { S.est.q = e.target.value; PINTAR.estudiantes(); });
-  v.querySelector("#e-exp").addEventListener("click", exportarResultados);
+  v.querySelector("#e-exp").addEventListener("click", () => exportarResultados(S.filas));
   v.querySelector("#e-add").addEventListener("click", modalAgregar);
 };
 PINTAR.estudiantes = () => {
@@ -496,9 +507,9 @@ function modalAgregar() {
     } catch (err) { toast(err.message, "err"); e.target.disabled = false; }
   });
 }
-function exportarResultados() {
+function exportarResultados(filas, nombre = "resultados_parcial.csv") {
   const cab = ["Nombre", "Cédula", "Estado", "Motivo", "Respondidas", "Total", "Aciertos", "Puntos", "Puntos máx.", "Nota /20", "Inicio", "Fin", "Minutos", "Salidas de la página", "Minutos fuera", "Intentos de copiar", "Capturas de pantalla", "Posibles capturas"];
-  descargarCSV("resultados_parcial.csv", [cab, ...S.filas.map((f) => [
+  descargarCSV(nombre, [cab, ...filas.map((f) => [
     f.nombre, f.cedula, ETIQ[f.estado], MOTIVO[f.motivo] || "", f.respondidas ?? "", f.total ?? "", f.correctas ?? "",
     f.puntos ?? "", f.puntos_max ?? "", f.nota == null ? "" : fmtN(f.nota), fechaCSV(f.iniciado_en), fechaCSV(f.finalizado_en),
     minutos(f.iniciado_en, f.finalizado_en) ?? "", f.salidas ?? "", f.seg_fuera == null ? "" : fmtN(f.seg_fuera / 60, 1), f.copias ?? "", f.capturas ?? "", f.posibles_capturas ?? ""])]);
@@ -636,23 +647,24 @@ CONSTRUIR.analisis = () => `
 ENLAZAR.analisis = (v) => {
   v.querySelector("#a-q").addEventListener("input", (e) => { S.ana.q = e.target.value; PINTAR.analisis(); });
   v.querySelector("#a-rev").addEventListener("change", (e) => { S.ana.revisar = e.target.checked; PINTAR.analisis(); });
-  v.querySelector("#a-exp1").addEventListener("click", () => {
-    const P = (S.an && S.an.por_pregunta) || [];
-    descargarCSV("analisis_preguntas.csv", [["ID", "Tema", "Enunciado", "Nivel", "Activa", "Respuestas", "Aciertos", "% acierto", "Tiempo mediano (s)", "Discriminación", "Distractor más elegido", "Veces", "Alertas"],
-      ...P.map((q) => [q.id, q.tema, q.enunciado, q.dificultad, q.activa ? "Sí" : "No", q.n, q.aciertos, q.pct == null ? "" : fmtN(q.pct, 1), q.seg_med ?? "",
-        q.disc == null ? "" : fmtN(q.disc), q.distractor ? q.distractor.texto : "", q.distractor ? q.distractor.n : "", alertas(q).join(" | ")])]);
-  });
+  v.querySelector("#a-exp1").addEventListener("click", () => exportarAnalisis((S.an && S.an.por_pregunta) || []));
   v.querySelector("#a-exp2").addEventListener("click", async (e) => {
     e.currentTarget.disabled = true;
-    try {
-      const R = await rpc("parcial_admin_respuestas", { p_clave: S.clave });
-      descargarCSV("respuestas_detalladas.csv", [["Nombre", "Cédula", "Orden", "Tema", "Enunciado", "Nivel pregunta", "Nivel del estudiante", "Respuesta elegida", "Respuesta correcta", "Correcta", "Puntos", "Segundos"],
-        ...R.map((x) => [x.nombre, x.cedula, x.orden, x.tema, x.enunciado, x.dificultad, x.nivel, x.elegida ?? "(sin responder)", x.correcta_txt,
-          x.es_correcta == null ? "" : x.es_correcta ? "Sí" : "No", x.puntos, x.segundos ?? ""])]);
-    } catch (err) { toast(err.message, "err"); }
+    try { exportarRespuestas(await rpc("parcial_admin_respuestas", { p_clave: S.clave })); }
+    catch (err) { toast(err.message, "err"); }
     e.currentTarget.disabled = false;
   });
 };
+function exportarAnalisis(P, nombre = "analisis_preguntas.csv") {
+  descargarCSV(nombre, [["ID", "Tema", "Enunciado", "Nivel", "Activa", "Respuestas", "Aciertos", "% acierto", "Tiempo mediano (s)", "Discriminación", "Distractor más elegido", "Veces", "Alertas"],
+    ...P.map((q) => [q.id, q.tema, q.enunciado, q.dificultad, q.activa ? "Sí" : "No", q.n, q.aciertos, q.pct == null ? "" : fmtN(q.pct, 1), q.seg_med ?? "",
+      q.disc == null ? "" : fmtN(q.disc), q.distractor ? q.distractor.texto : "", q.distractor ? q.distractor.n : "", alertas(q).join(" | ")])]);
+}
+function exportarRespuestas(R, nombre = "respuestas_detalladas.csv") {
+  descargarCSV(nombre, [["Nombre", "Cédula", "Orden", "Tema", "Enunciado", "Nivel pregunta", "Nivel del estudiante", "Respuesta elegida", "Respuesta correcta", "Correcta", "Puntos", "Segundos"],
+    ...R.map((x) => [x.nombre, x.cedula, x.orden, x.tema, x.enunciado, x.dificultad, x.nivel, x.elegida ?? "(sin responder)", x.correcta_txt,
+      x.es_correcta == null ? "" : x.es_correcta ? "Sí" : "No", x.puntos, x.segundos ?? ""])]);
+}
 PINTAR.analisis = () => {
   const R = (S.an && S.an.resumen) || {}, P = (S.an && S.an.por_pregunta) || [], st = S.ana;
   const totResp = P.reduce((a, q) => a + q.n, 0), totOk = P.reduce((a, q) => a + q.aciertos, 0);
@@ -874,6 +886,108 @@ function infoEscala() {
   $("s-ref-info").textContent = `Recorrido perfecto con ${B.n_preguntas} preguntas: ${perf} puntos.` +
     (ref > 0 ? ` Con ${ref} (${Math.round(ref / perf * 100)} % del máximo): 10 se saca con ${mitad(ref)} puntos y 20 con ${ref}.` : "");
 }
+
+// ── Parcial anterior (archivo) ────────────────────────────────────────────
+// Estadísticas congeladas de un parcial ya cerrado: no dependen de los estudiantes
+// ni del banco actuales, así que se pueden borrar para empezar otro parcial.
+const TABS_ARCH = [["resumen", "Resumen"], ["estudiantes", "Estudiantes"], ["preguntas", "Preguntas"]];
+CONSTRUIR.archivo = () => `
+  <div class="card panel">
+    <div class="toolbar">
+      <div class="seg" id="ar-lista"></div>
+      <div class="seg" id="ar-tab"></div>
+      <div class="end">
+        <button class="btn secondary sm" id="ar-exp1"><span data-ic="download"></span>Resultados</button>
+        <button class="btn secondary sm" id="ar-exp2"><span data-ic="download"></span>Análisis</button>
+        <button class="btn secondary sm" id="ar-exp3"><span data-ic="download"></span>Respuestas</button>
+      </div>
+    </div>
+    <div class="panel-b muted" id="ar-info" style="font-size:13px;border-top:1px solid var(--line-2)"></div>
+  </div>
+  <div id="ar-body" style="display:grid;gap:20px"></div>`;
+ENLAZAR.archivo = (v) => {
+  const A = S.arch, nombre = (t) => `${t}_${(A.datos.titulo || "parcial").replace(/[^\p{L}\p{N}]+/gu, "_")}.csv`;
+  v.querySelector("#ar-exp1").addEventListener("click", () => A.datos && exportarResultados(A.datos.resultados, nombre("resultados")));
+  v.querySelector("#ar-exp2").addEventListener("click", () => A.datos && exportarAnalisis(A.datos.analisis.por_pregunta || [], nombre("analisis")));
+  v.querySelector("#ar-exp3").addEventListener("click", () => A.datos && exportarRespuestas(A.datos.respuestas, nombre("respuestas")));
+  (async () => {
+    try {
+      if (!A.lista) A.lista = await rpc("parcial_admin_archivos", { p_clave: S.clave });
+      if (A.lista.length && !A.datos) await cargarArchivo(A.id || A.lista[0].id);
+    } catch (e) { toast(e.message, "err"); }
+    if (S.view === "archivo") PINTAR.archivo();
+  })();
+};
+async function cargarArchivo(id) {
+  S.arch.id = id; S.arch.datos = null;
+  if (S.view === "archivo") PINTAR.archivo();
+  S.arch.datos = await rpc("parcial_admin_archivo", { p_clave: S.clave, p_id: id });
+}
+PINTAR.archivo = () => {
+  const A = S.arch, L = A.lista || [], D = A.datos;
+  $("ar-lista").classList.toggle("hide", L.length <= 1);
+  $("ar-lista").innerHTML = L.length > 1 ? L.map((x) => `<button class="${x.id === A.id ? "on" : ""}" data-id="${x.id}">${esc(x.titulo)}</button>`).join("") : "";
+  $("ar-lista").querySelectorAll("button").forEach((b) => b.addEventListener("click", () =>
+    cargarArchivo(Number(b.dataset.id)).then(PINTAR.archivo).catch((e) => toast(e.message, "err"))));
+  $("ar-tab").innerHTML = TABS_ARCH.map(([k, t]) => `<button class="${A.tab === k ? "on" : ""}" data-t="${k}">${t}</button>`).join("");
+  $("ar-tab").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { A.tab = b.dataset.t; PINTAR.archivo(); }));
+  ["ar-exp1", "ar-exp2", "ar-exp3"].forEach((id) => { $(id).disabled = !D; });
+  const body = $("ar-body");
+  if (!A.lista || (L.length && !D)) { $("ar-info").textContent = "Cargando…"; body.innerHTML = ""; return; }
+  if (!L.length) { $("ar-info").textContent = ""; body.innerHTML = `<div class="card panel">${vacio("archive", "Aún no hay parciales archivados.")}</div>`; return; }
+
+  const F = D.resultados || [], an = D.analisis || {}, R = an.resumen || {};
+  const fin = F.filter((f) => f.estado === "finalizado").length;
+  $("ar-info").innerHTML = `<b style="color:var(--ink)">${esc(D.titulo)}</b> · archivado el ${new Date(D.creado_en).toLocaleDateString("es-VE", { day: "numeric", month: "long", year: "numeric" })}
+    · ${F.length} estudiantes · ${esc((D.config && D.config.n_preguntas) || "—")} preguntas por estudiante`;
+
+  if (A.tab === "resumen") {
+    const dif = an.por_dificultad || [], nResp = dif.reduce((a, r) => a + r.n, 0), nOk = dif.reduce((a, r) => a + r.aciertos, 0);
+    const apr = R.aprobados || 0;
+    body.innerHTML = `<div class="kpis">${htmlKpis([
+        ["users", "", "Participantes", F.length, "", `${fin} finalizados`],
+        ["target", "", "Promedio", fmtN(R.promedio), " /20", `Mediana ${fmtN(R.mediana)}`],
+        ["trend", "ok", "Aprobados", apr, fin ? ` /${fin}` : "", fin ? `${Math.round((apr / fin) * 100)}% con nota ≥ 10` : "sin finalizados"],
+        ["chart", "", "Nota más alta", fmtN(R.max), "", `Más baja ${fmtN(R.min)}`],
+        ["check", "ok", "Acierto global", nResp ? Math.round((nOk / nResp) * 100) : "—", nResp ? "%" : "", `${nResp} respuestas`],
+        ["flag", "amber", "Duración", R.minutos_med ?? "—", R.minutos_med != null ? " min" : "", "mediana para terminar"]])}</div>
+      <div class="grid-2">
+        <div class="card panel"><div class="panel-h"><h3>Distribución de notas</h3><p class="desc">Exámenes finalizados, en tramos de 2 puntos</p></div><div class="panel-b">${htmlHist(an)}</div></div>
+        <div class="card panel"><div class="panel-h"><h3>Aciertos por nivel de dificultad</h3></div><div class="panel-b">${htmlNiveles(an)}</div></div>
+      </div>
+      <div class="card panel"><div class="panel-h"><h3>Aciertos por tema</h3></div><div class="panel-b">${htmlTemas(an)}</div></div>`;
+  } else if (A.tab === "estudiantes") {
+    const st = A.est, rows = ordenar(F, st.sort, st.dir);
+    body.innerHTML = `<div class="card panel"><div class="tablewrap"><table class="t" id="ar-tabla"><thead><tr>
+        ${th("Estudiante", "nombre", st)}${th("Estado", "estado", st)}${th("Respondidas", "respondidas", st, "r")}${th("Aciertos", "correctas", st, "r")}
+        ${th("Puntos", "puntos", st, "r")}${th("Nota", "nota", st, "r")}<th class="r">Minutos</th>${th("Salidas", "salidas", st, "r")}</tr></thead><tbody>
+      ${rows.map((f) => `<tr>
+        <td><div class="who">${avatar(f.nombre)}<div><b>${esc(f.nombre)}</b><span>${esc(f.cedula)}</span></div></div></td>
+        <td><span class="pill ${f.estado}">${ETIQ[f.estado] || f.estado}</span></td>
+        <td class="r num">${f.estado === "sin_iniciar" ? "—" : `${f.respondidas} / ${f.total}`}</td>
+        <td class="r num">${f.correctas ?? "—"}</td>
+        <td class="r num">${f.puntos ?? "—"}</td>
+        <td class="r">${f.nota == null ? `<span class="muted">—</span>` : `<span class="grade ${gradeCls(f.nota)}">${fmtN(f.nota)}</span>`}</td>
+        <td class="r num">${minutos(f.iniciado_en, f.finalizado_en) ?? "—"}</td>
+        <td class="r">${salidasCell(f)}</td></tr>`).join("") || `<tr><td colspan="8">${vacio("users", "Sin estudiantes en este parcial.")}</td></tr>`}
+      </tbody></table></div></div>`;
+    bindSort($("ar-tabla"), st, PINTAR.archivo);
+  } else {
+    const st = A.pre, rows = ordenar((an.por_pregunta || []).map((x) => ({ ...x, al: alertas(x), nal: alertas(x).length })), st.sort, st.dir);
+    body.innerHTML = `<div class="card panel"><div class="tablewrap"><table class="t" id="ar-tabla"><thead><tr>
+        <th>Pregunta</th>${th("Nivel", "dificultad", st)}${th("Resp.", "n", st, "r")}${th("% acierto", "pct", st)}${th("Discrim.", "disc", st, "r")}${th("Alertas", "nal", st)}</tr></thead><tbody>
+      ${rows.map((x) => `<tr>
+        <td class="qcell"><b>${esc(x.enunciado)}</b><small>#${x.id} · ${esc(x.tema || "Sin tema")}</small></td>
+        <td><span class="lvl">${x.dificultad}</span></td>
+        <td class="r num">${x.n}</td>
+        <td><div class="pctbar"><div class="t2"><i class="${pctColor(x.pct)}" style="width:${x.pct}%"></i></div><b>${fmtN(x.pct, 0)}%</b></div></td>
+        <td class="r num">${x.disc == null ? "—" : fmtN(x.disc)}</td>
+        <td>${x.al.map((a) => `<span class="flag">${icon("alert")}${esc(a)}</span>`).join(" ") || `<span class="muted">—</span>`}</td></tr>`).join("")
+        || `<tr><td colspan="6">${vacio("search", "Sin preguntas respondidas.")}</td></tr>`}
+      </tbody></table></div></div>`;
+    bindSort($("ar-tabla"), st, PINTAR.archivo);
+  }
+};
 
 // Reanudar sesión del profesor en la misma pestaña
 (function () {

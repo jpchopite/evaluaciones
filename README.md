@@ -3,7 +3,7 @@
 Plataforma web para aplicar el parcial: sitio estático (GitHub Pages) + base de datos y lógica en Supabase.
 
 - **Banco de preguntas** con dificultad 1–5; la dificultad es también la ponderación (una pregunta de nivel 5 vale 5 puntos).
-- **50 preguntas por estudiante** (configurable), sacadas una a una al azar de **todo el banco** según su nivel. Además las opciones de cada pregunta se barajan por estudiante, para que copiar «la B» no sirva.
+- **20 preguntas por estudiante** (configurable; el primer parcial tuvo 50), sacadas una a una al azar de **todo el banco** según su nivel. Además las opciones de cada pregunta se barajan por estudiante, para que copiar «la B» no sirva.
 - **Duración de 2 horas** (configurable) controlada por el servidor: el reloj del navegador es solo informativo. Al vencer, el examen se cierra y lo no respondido cuenta 0.
 - **Algoritmo adaptivo:** ver abajo.
 - **Nota sobre 20** para todos, con la misma escala: puntos obtenidos / puntaje de referencia × 20 (por defecto, el de un recorrido perfecto).
@@ -14,13 +14,13 @@ Cada estudiante tiene un *nivel* (1–5) que empieza en **1**.
 
 1. Se saca **al azar, de todo el banco activo**, una pregunta del nivel actual que el estudiante aún no haya visto.
 2. Si **acierta**, el nivel sube 1 (N1 → N2 → … → N5; en N5 se queda mientras acierte). Si **falla**, baja 1 (nunca por debajo de N1).
-3. Se repite hasta responder las 50 preguntas o agotarse el tiempo.
+3. Se repite hasta responder las 20 preguntas o agotarse el tiempo.
 
-**Puntos y nota.** Cada acierto vale su nivel (N1 = 1 … N5 = 5). El puntaje máximo es el de un recorrido perfecto: 1+2+3+4+5+5+… (con 50 preguntas, **240**). Es el mismo para todos, así que la nota es comparable: quien acierta todo saca 20, y fallar no reduce el máximo (solo hace perder los puntos de esa pregunta y baja el nivel de la siguiente).
+**Puntos y nota.** Cada acierto vale su nivel (N1 = 1 … N5 = 5). El puntaje máximo es el de un recorrido perfecto: 1+2+3+4+5+5+… (con 20 preguntas, **90**; con 50, 240). Es el mismo para todos, así que la nota es comparable: quien acierta todo saca 20, y fallar no reduce el máximo (solo hace perder los puntos de esa pregunta y baja el nivel de la siguiente).
 
 **Escala de notas.** Dividir entre el recorrido perfecto es exigente: un estudiante que domina el nivel 3 suele sacar cerca de 7. En **Ajustes → Escala de notas** se puede bajar el *puntaje de referencia* (los puntos que valen 20), por ejemplo a 165: entonces 113 puntos dan 13,7 en vez de 9,4, y la nota se topa en 20. Al guardar se recalifican al instante todos los exámenes finalizados; los puntos y el orden entre estudiantes no cambian, y el estudiante no ve ninguna diferencia. Se acepta entre el 50 % y el 100 % del recorrido perfecto, y se guarda como proporción, así que se mantiene si cambia el número de preguntas. Ver `supabase/migrations/009_escala_de_notas.sql`.
 
-Si un nivel se queda sin preguntas no vistas, se usa la del nivel más cercano y se acredita el nivel del estudiante, para que no pierda puntos por un banco corto. Conviene tener **al menos 25 preguntas por nivel** (con 50 preguntas por examen).
+Si un nivel se queda sin preguntas no vistas, se usa la del nivel más cercano y se acredita el nivel del estudiante, para que no pierda puntos por un banco corto. Conviene tener **al menos 10 preguntas por nivel** con 20 preguntas por examen, y más en el nivel 5, donde quien acierta pasa la mayor parte del examen.
 
 Durante el examen nunca se le dice al estudiante si acertó ni su nivel. Al terminar ve la confirmación de entrega y **los puntos que obtuvo**, sin el máximo ni la nota: la nota es solo para el profesor. Ver `supabase/migrations/012_puntos_al_finalizar.sql`.
 
@@ -57,6 +57,8 @@ celular). Ver `supabase/migrations/006_salidas_de_pagina.sql`.
 **Estudiantes:** abren `index.html` y escriben su cédula y su nombre. No hay código, contraseña ni lista previa: si la cédula no está registrada, el estudiante queda inscrito en ese momento con el nombre que escribió. Las cédulas se normalizan (`12.345.678`, `v-12345678` y `V12345678` son la misma) y para inscribirse deben ser venezolanas o de extranjero (V o E y 5 a 9 dígitos). Cada ingreso queda registrado con el nombre escrito, y el detalle del estudiante lo muestra en rojo si no coincide con el registrado. Ver `supabase/migrations/010_acceso_por_cedula.sql` y `011_inscripcion_abierta.sql`.
 
 **Entrada al parcial:** el botón «Entrada abierta / cerrada» de la barra superior del panel la abre o la cierra. Con la entrada cerrada nadie puede empezar el parcial ni inscribirse; quien ya lo empezó puede seguir, volver a entrar si pierde la conexión y ver sus puntos al terminar. Por defecto está abierta. Ver `supabase/migrations/014_abrir_cerrar_entrada.sql`.
+
+**Parcial anterior:** antes de empezar un parcial nuevo, las estadísticas del anterior se guardan en `parcial.archivos` (resultados por estudiante, análisis por pregunta, nivel y tema, y todas las respuestas). Se consultan en la sección **Parcial anterior** del panel, con su clave, y se exportan a CSV. No dependen de los estudiantes ni del banco actuales, así que estos se pueden borrar o cambiar. Ver `supabase/migrations/015_archivo_de_parciales.sql` y `supabase/datos/2026-11-25_parcial_hubbert.sql`.
 
 **Profesor:** abre `admin.html` con la clave de administrador. El panel tiene cinco secciones:
 
